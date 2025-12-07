@@ -63,6 +63,8 @@ idf.py menuconfig # Not usefull for the hello-world but had to check if it works
 idf.py build
 
 # The port is the full path, baud is from the tech doc of the manufacturer. It's also the default baud for esp32
+# Si il y as deja quelque chose en lecture ou ecriture sur le port le flash ne peut fonctionner.
+# Il faut terminer le monitoring avant de reflash
 idf.py -p /dev/cu.usbserial-0001 -b 115200 flash
 
 # Serial output
