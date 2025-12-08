@@ -11,13 +11,23 @@ Heach folder represent a part of the projet.
 
 For this project we are 3 devs, build 3 small part of the experience.
 
+== Documentations
+
+You can find the project documentation here on this repo.
+
+=== Navigation
+
+- xref:documentations/README.adoc[Get started here]
+- xref:documentations/communication/README.adoc[Communication]
+- xref:documentations/communication/spec/README.adoc[JSON Spec]
+
 == Project structure
 
 [,shell]
 ----
 📁 project-root/
 │
-├── DevKit-ESP32/
+├── devkit-esp32/
 │   ├── 🖥️ project-template/
 │   │   ├── [...]
 │   │   └── 📚 README.adoc # How to use the template
