@@ -1,0 +1,13 @@
+= 📡 Communication
+
+For this project we will have to create a experience in a controlled environnement
+thus giving us the possibility of a constant wifi connection through a router.
+This, and the fact that WebSockets are easy, fast, reliable way to do live
+connections, we are going to use as much WebSockets as possible.
+
+We are also going to use API calls, since they are even easier to performs and can
+be really powerfull to sequence the experience.
+
+We MUST also user Bluetooth connection from IPhones to a Bolt Sphero, and a RVR.
+
+To communicate, we have decided to use a common JSON spec. xref:spec/README.adoc[Read the spec here.]
