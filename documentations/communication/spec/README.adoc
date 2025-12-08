@@ -34,8 +34,8 @@ This is an exemple of an `Update` json.
   "payload": [
     {
       "datatype": "string",
-      "value": "UwU",
-			"slug": "a_target_value"
+      "value":  "UwU",
+      "slug": "a_target_value"
     }
   ]
 }
