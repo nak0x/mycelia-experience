@@ -16,21 +16,29 @@ For this project we are 3 devs, build 3 small part of the experience.
 [,shell]
 ----
 📁 project-root/
-├── 🔁 iteration-1/
+│
+├── DevKit-ESP32/
+│   ├── 🖥️ project-template/
+│   │   ├── [...]
+│   │   └── 📚 README.adoc # How to use the template
+│   │
+│   └── 📚 README.adoc # How to setup ESP_IDF
+│
+├── iteraction-1/
 │   ├── 🖥️ server/
 │   ├── 📡 iot/
 │   ├── ⚙️ core/
 │   ├── 🧪 tests/
 │   └── 📚 docs/
 │
-├── 🔁 iteration-2/
+├── iteraction-2/
 │   ├── 🖥️ server/
 │   ├── 📡 iot/
 │   ├── ⚙️ core/
 │   ├── 🧪 tests/
 │   └── 📚 docs/
 │
-├── 🔁 iteration-3/
+├── iteraction-3/
 │   ├── 🖥️ server/
 │   ├── 📡 iot/
 │   ├── ⚙️ core/
