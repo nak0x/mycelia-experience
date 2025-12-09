@@ -20,3 +20,5 @@ flash-monitor:
 clean:
 	idf.py clean
 
+dev:
+	idf.py -p $(PORT) build flash monitor
