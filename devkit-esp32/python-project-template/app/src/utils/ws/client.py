@@ -45,7 +45,7 @@ class WebsocketClient():
 
     def close(self):
         self.CONNECTED = False
-        self.ClOSED = True
+        self.CLOSED = True
         try:
             self.ws.close()
         except Exception as e:
