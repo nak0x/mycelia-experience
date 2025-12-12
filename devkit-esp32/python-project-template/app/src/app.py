@@ -35,9 +35,6 @@ class App(SingletonBase):
 
     def idle(self):
         self.state = AppState.IDLE
-        led = self.config.pins["led"]
-        led.value(0 if led.value() else 1)
-        sleep(0.2)
         machine.idle()
 
     def run(self):

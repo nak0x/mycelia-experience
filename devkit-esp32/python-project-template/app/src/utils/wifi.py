@@ -31,4 +31,6 @@ class WifiManager:
             wlan.connect(self._config["ssid"], self._config["password"])
             while not wlan.isconnected():
                 App().idle()
+        # Light the builtin led when wifi is connected
+        App().config.pins["led"].on()
         print('Network config:', wlan.ipconfig('addr4'))
