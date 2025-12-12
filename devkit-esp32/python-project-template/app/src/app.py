@@ -32,6 +32,8 @@ class App(SingletonBase):
         self.config = Config()
         self.shutdown_request = False
         self.ticks = ticks_cpu
+        self.DEBUG = self.config.debug
+        self.SLOWED = self.config.slowed
 
     def idle(self):
         self.state = AppState.IDLE
