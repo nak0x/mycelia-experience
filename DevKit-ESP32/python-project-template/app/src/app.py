@@ -1,4 +1,5 @@
 import machine
+import gc
 
 from time import ticks_cpu, sleep
 
@@ -44,6 +45,7 @@ class App(SingletonBase):
             setup()
         self.state = AppState.RUNNING
         while not self.shutdown_request:
+            gc.collect()
             if self.state == AppState.RUNNING:
                 if self.DEBUG:
                     print(f"App state: {self.state} | slowed: {self.SLOWED}")

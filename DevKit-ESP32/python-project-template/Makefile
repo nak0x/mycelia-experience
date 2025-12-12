@@ -1,12 +1,15 @@
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+
 run:
-	mpremote cp main.py :main.py
-	mpremote cp -r src :
+	mpremote cp -r $(ARGS) :
 	mpremote reset
 	mpremote
 
 deploy:
-	mpremote cp main.py :main.py
-	mpremote cp -r src :
+	mpremote cp -r app/* :
 
 start:
 	mpremote reset
+
+%:
+	@:

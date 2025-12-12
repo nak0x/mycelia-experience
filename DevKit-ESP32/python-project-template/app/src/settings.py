@@ -1,14 +1,29 @@
 from machine import Pin
+import json
 from src.utils.gpio import GPIO
 
 class Config:
+    pins = {}
     def __init__(self):
-        self._data = {
-            "pins": {},
-            "SSID": "Livebox-8810_EXT",
-            "PASSWORD": "ZiwfswvFwWTsqsV7q5",
-        }
+        self._data = self.load_from_file("config.json")
         self.setup_pins()
+
+    def setup_pins(self):
+        self.pins["led"] = Pin(GPIO.LED, Pin.OUT, Pin.PULL_UP)
+        self.pins["button"] = Pin(GPIO.GPIO4, Pin.IN, Pin.PULL_DOWN)
+
+    def load_from_file(self, filepath):
+        print("Trying to load config ...")
+        f = open(filepath)
+        raw_data = f.read()
+        # Keep file the least amount of time im memory
+        f.close()
+        config = json.loads(raw_data)
+        # Dont keep raw_data in memory
+        del raw_data
+        # TODO: Add a config parser
+        return config
+
 
     # Dict-style access: cfg["SSID"]
     def __getitem__(self, key):
@@ -34,8 +49,3 @@ class Config:
             super().__setattr__(name, value)
         else:
             self._data[name] = value
-
-    def setup_pins(self):
-        pins = self._data["pins"]
-        pins["led"] = Pin(GPIO.LED, Pin.OUT, Pin.PULL_UP)
-        pins["button"] = Pin(GPIO.GPIO4, Pin.IN, Pin.PULL_DOWN)
