@@ -28,7 +28,15 @@ class WifiManager:
         wlan.active(True)
         if not wlan.isconnected():
             print('Connecting to network...')
+<<<<<<< Updated upstream
             wlan.connect(self._config["ssid"], self._config["password"])
             while not wlan.isconnected():
+=======
+            self.wlan.connect(self._config["ssid"], self._config["password"])
+            t0 = time.ticks_ms()
+            while not self.wlan.isconnected():
+                if time.ticks_diff(time.ticks_ms(), t0) > App().config.wifi.timeout:
+                    raise RuntimeError("Timeout while connecting to network")
+>>>>>>> Stashed changes
                 App().idle()
         print('Network config:', wlan.ipconfig('addr4'))

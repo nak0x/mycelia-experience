@@ -3,8 +3,8 @@ import gc
 
 from time import ticks_cpu, sleep
 
-from src.settings import Config
-from src.utils.abstract_singleton import SingletonBase
+from .config import Config
+from .utils.abstract_singleton import SingletonBase
 
 
 class AppState:
@@ -42,7 +42,16 @@ class App(SingletonBase):
 
     def run(self):
         for setup in self.setup:
+<<<<<<< Updated upstream
             setup()
+=======
+            try:
+                setup()
+            except RuntimeError as e:
+                print(f"An error occurred while setting up the app: {e}")
+                continue
+
+>>>>>>> Stashed changes
         self.state = AppState.RUNNING
         while not self.shutdown_request:
             gc.collect()

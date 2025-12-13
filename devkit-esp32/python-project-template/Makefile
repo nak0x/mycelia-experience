@@ -5,6 +5,11 @@ run:
 	mpremote reset
 	mpremote
 
+dev:
+	mpremote cp -r $(ARGS) :
+	mpremote reset
+	mpremote
+
 deploy:
 	mpremote cp -r app/* :
 
