@@ -1,57 +1,60 @@
-import gc
-from lib.uwebsockets.client import connect as ws_connect
-from src.app import App
-from src.utils.frames.frame_parser import FrameParser
+"""
+Websockets client for micropython
 
-class WebsocketClient():
-    CONNECTED = False
-    CLOSED = False
-    RECONNECT = False
+Based very heavily off
+https://github.com/aaugustin/websockets/blob/master/websockets/client.py
+"""
 
-    ws = None
+import usocket as socket
+import ubinascii as binascii
+import urandom as random
 
-    def __init__(self):
-        App().update.append(self.update)
-        App().setup.append(self.connect)
-        self.RECONNECT = App().config.ws_reconnect
+from .protocol import Websocket, urlparse
 
-    def connect(self):
-        print("Websocket connecting ...")
-        try:
-            self.ws = ws_connect(App().config.ws_server)
-        except Exception as e:
-            print(f"An error occured while connecting websocket: {e}")
-            return
-        self.CONNECTED = True
-        print("Websocket connected")
 
-    def update(self):
-        """
-        Blocking ws loop !
-            - Send a heartbeat message
-            - Wait for a reply (recv blocks)
-        """
-        if self.CLOSED:
-            return
-        if self.CONNECTED:
-            try:
-                self.ws.send("up")
-                frame = FrameParser(self.ws.recv()).parse()
-                print(f"Recv: {frame.metadata.message_id} from {frame.metadata.sender_id}")
-                App().send_frame(frame)
-            except Exception as e:
-                print(f"An error occured while updating websocket: {e}")
-                self.close(not self.RECONNECT)
-        elif self.RECONNECT:
-            self.connect()
 
-    def close(self, shutdown=True):
-        self.CONNECTED = False
-        self.CLOSED = shutdown
-        try:
-            self.ws.close()
-        except Exception as e:
-            print(f"An error occured when closing websocket: {e}")
-            del self.ws
-            gc.collect()
-            pass
+class WebsocketClient(Websocket):
+    is_client = True
+
+def connect(uri):
+    """
+    Connect a websocket.
+    """
+
+    uri = urlparse(uri)
+    assert uri
+
+    print(f"Opening connection {uri.hostname}:{uri.port}")
+
+    sock = socket.socket()
+    addr = socket.getaddrinfo(uri.hostname, uri.port)
+    sock.connect(addr[0][4])
+
+    def send_header(header, *args):
+        sock.write(header % args + '\r\n')
+
+    # Sec-WebSocket-Key is 16 bytes of random base64 encoded
+    key = binascii.b2a_base64(bytes(random.getrandbits(8)
+                                    for _ in range(16)))[:-1]
+
+    send_header(b'GET %s HTTP/1.1', uri.path or '/')
+    send_header(b'Host: %s:%s', uri.hostname, uri.port)
+    send_header(b'Connection: Upgrade')
+    send_header(b'Upgrade: websocket')
+    send_header(b'Sec-WebSocket-Key: %s', key)
+    send_header(b'Sec-WebSocket-Version: 13')
+    send_header(b'Origin: http://{hostname}:{port}'.format(
+        hostname=uri.hostname,
+        port=uri.port)
+    )
+    send_header(b'')
+
+    header = sock.readline()[:-2]
+    assert header.startswith(b'HTTP/1.1 101 '), header
+
+    # We don't (currently) need these headers
+    # FIXME: should we check the return key?
+    while header:
+        header = sock.readline()[:-2]
+
+    return WebsocketClient(sock)
