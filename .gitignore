@@ -3,3 +3,6 @@ build/
 .vs_code/
 .cache/
 .DS_Store
+.venv
+*.config.json
+config.json
