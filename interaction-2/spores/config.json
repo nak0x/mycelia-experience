@@ -1,0 +1,15 @@
+{
+    "device_id": "ESP32-020101",
+    "wifi": {
+        "SSID": "Cudy-F00C",
+        "password": "70897678",
+        "timeout": 2000
+    },
+    "websocket": {
+        "server": "ws://mycelia.kibishi47.ovh/ws",
+        "reconnect": true,
+        "debug": false
+    },
+    "debug": false,
+    "slowed": false
+}
