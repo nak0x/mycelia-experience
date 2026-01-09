@@ -7,7 +7,6 @@ class Relay:
 
     def __init__(self, pin):
         self.pin = Pin(pin, Pin.OUT, value=1)
-        App().on_frame_received.append(self.on_frame_received)
 
     def open(self):
         self.pin.value(0)
