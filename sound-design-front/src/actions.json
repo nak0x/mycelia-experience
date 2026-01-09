@@ -1,9 +1,6 @@
 {
     "actions": [
-        {
-            "action": "00-get-connected-clients",
-            "type": null
-        },
+
         {
             "action": "stop-sound",
             "type": null
