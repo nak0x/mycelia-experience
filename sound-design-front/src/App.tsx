@@ -148,6 +148,7 @@ function AppContent() {
         setIsClientsOpen={setIsClientsOpen}
         isUIHidden={isUIHidden}
         clients={clients}
+        sendAction={sendAction}
       />
 
       <CommandsDrawer 
