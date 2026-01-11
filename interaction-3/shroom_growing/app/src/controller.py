@@ -20,3 +20,8 @@ class MainController(Controller):
     def on_frame_received(self, frame):
         if frame.action == "03-grow-shroom":
             self.start_animation()
+        elif frame.action == "03-e-on":
+            self.relay.open()
+        elif frame.action == "03-e-off":
+            self.relay.close()
+

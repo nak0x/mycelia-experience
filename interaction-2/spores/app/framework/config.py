@@ -14,7 +14,6 @@ class Config:
     def setup_pins(self):
         self.pins["builtin-led"] = Pin(GPIO.LED, Pin.OUT, Pin.PULL_DOWN)
         self.pins["led"] = Pin(GPIO.GPIO4, Pin.OUT, Pin.PULL_DOWN)
-        self.pins["fan_power"] = GPIO.GPIO19
 
     def load_from_file(self, filepath):
         print("Trying to load config ...")
