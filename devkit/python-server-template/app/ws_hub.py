@@ -3,10 +3,12 @@ import asyncio
 from aiohttp import web
 from typing import Optional
 from app.frames.factory import frame
+from app.log import Logger
 
 class WsHub:
     def __init__(self, app: web.Application) -> None:
-        self.app = app
+        self.server_id: str = app["server_id"]
+        self.logger: Logger = app["logger"]
         self._setted_clients: dict = {}
         self._clients: set[web.WebSocketResponse] = set()
         self._lock = asyncio.Lock()
@@ -15,6 +17,7 @@ class WsHub:
         async with self._lock:
             if ws not in self._clients:
                 return
+            self.logger.log("WS AUTHENTICATION", id)
             print(f"[WS] New client setted: {id}.")
             self._setted_clients[id] = ws
 
@@ -31,16 +34,19 @@ class WsHub:
 
     async def add(self, ws: web.WebSocketResponse) -> None:
         async with self._lock:
+            self.logger.log("WS CONNECT", "UNAUTHENTICATED")
             print("[WS] New client connected.")
             self._clients.add(ws)
 
     async def remove(self, ws: web.WebSocketResponse) -> None:
         client_id = await self.unset_client(ws)
-        print(f"[WS] {client_id}")
-        await self.broadcast_action("00-lost-client", client_id)
+        if client_id is not None:
+            print(f"[WS] {client_id}")
+            await self.broadcast_action("00-lost-client", client_id)
 
         async with self._lock:
-            if not client_id:
+            self.logger.log("WS DISCONNECT", client_id)
+            if client_id is None:
                 print("[WS] client disconnected.")
             self._clients.discard(ws)
 
@@ -55,11 +61,12 @@ class WsHub:
     async def send_message(self, ws: web.WebSocketResponse, message: str, can_print: bool = True) -> None:
         await ws.send_str(message)
         if can_print:
+            self.logger.log("WS MESSAGE", message)
             print(f"> {message}")
 
     async def send_action(self, ws: web.WebSocketResponse, action: str, value) -> None:
         message = json.dumps(frame(
-            sender=self.app["server_id"],
+            sender=self.server_id,
             action=action,
             value=value
         ))
@@ -67,7 +74,7 @@ class WsHub:
 
     async def broadcast_action(self, action: str, value) -> int:
         message = json.dumps(frame(
-            sender=self.app["server_id"],
+            sender=self.server_id,
             action=action,
             value=value
         ))

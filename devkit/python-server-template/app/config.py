@@ -12,6 +12,11 @@ class ServerConfig:
 
 
 @dataclass
+class LogConfig:
+    filepath: str
+
+
+@dataclass
 class RouteConfig:
     method: str
     path: str
@@ -28,6 +33,7 @@ class WsActionConfig:
 @dataclass
 class AppConfig:
     server: ServerConfig
+    log: LogConfig
     routes: List[RouteConfig]
     ws_actions: Dict[str, WsActionConfig]
 
@@ -37,6 +43,7 @@ def load_config(path: str) -> AppConfig:
         raw = json.load(f)
 
     s = raw.get("server", {})
+    log = raw.get("log", {})
     routes_raw = raw.get("routes", [])
     ws_actions_raw = raw.get("ws_actions", {})
 
@@ -46,6 +53,9 @@ def load_config(path: str) -> AppConfig:
             host=s.get("host", "0.0.0.0"),
             port=int(s.get("port", 8000)),
             ws_path=s.get("ws_path", "/ws"),
+        ),
+        log=LogConfig(
+            filepath=log.get("filepath", "./app.log")
         ),
         routes=[
             RouteConfig(

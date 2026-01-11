@@ -5,6 +5,7 @@ from app.ws_hub import WsHub
 from app.http_router import mount_routes
 from app.ws_router import WsActionDispatcher
 from app.frames.parser import FrameParser
+from app.log import Logger
 
 
 async def ws_handler(request: web.Request) -> web.WebSocketResponse:
@@ -54,8 +55,9 @@ async def ws_handler(request: web.Request) -> web.WebSocketResponse:
 def build_app(cfg: AppConfig) -> web.Application:
     app = web.Application()
 
-    app["hub"] = WsHub(app)
     app["server_id"] = cfg.server.id
+    app["logger"] = Logger(cfg.log.filepath)
+    app["hub"] = WsHub(app)
     app["ws_dispatcher"] = WsActionDispatcher(app, cfg)
 
     # websocket route

@@ -1,6 +1,7 @@
 from aiohttp import web
 from app.ws_hub import WsHub
 from app.frames.factory import frame
+from app.log import Logger
 from typing import Any, Dict
 
 class Controller:
@@ -14,6 +15,10 @@ class Controller:
     @property
     def server_id(self) -> str:
         return self.app["server_id"]
+    
+    @property
+    def logger(self) -> Logger:
+        return self.app["logger"]
     
     def build_frame(self, action: str, value: Any) -> Dict[str, Any]:
         return frame(
