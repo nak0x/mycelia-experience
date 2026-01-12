@@ -10,3 +10,4 @@ __pycache__/
 .vite/
 node_modules/
 *.log
+motion.mp4
