@@ -1,6 +1,21 @@
 {
     "actions": [
-
+        {
+            "action": "00-reset",
+            "type": null
+        },
+        {
+            "action": "01-reset",
+            "type": null
+        },
+        {
+            "action": "02-reset",
+            "type": null
+        },
+        {
+            "action": "03-reset",
+            "type": null
+        },
         {
             "action": "stop-sound",
             "type": null
@@ -36,6 +51,18 @@
         {
             "action": "02-balance-toggle",
             "type": "boolean"
+        },
+        {
+            "action": "02-grass-toggle",
+            "type": "boolean"
+        },
+        {
+            "action": "02-grass-increment",
+            "type": null
+        },
+        {
+            "action": "02-grass-decrement",
+            "type": null
         },
         {
             "action": "02-water-flow-toggle",
