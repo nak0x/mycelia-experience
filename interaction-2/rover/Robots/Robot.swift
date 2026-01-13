@@ -72,6 +72,14 @@ class Robot {
     func setMainLED(color: RobotColor) {
         fatalError("setMainLED() must be overridden in the subclass")
     }
+
+    func vibrate(durationS: Int = 10) {
+        fatalError("vibrate() must be overridden in the subclass")
+    }
+
+    func spin(durationS: Int = 10) {
+        fatalError("spin() must be overridden in the subclass")
+    }
 }
 
 // MARK: - Internal methods (for runners)

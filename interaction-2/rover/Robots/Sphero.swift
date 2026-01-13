@@ -46,4 +46,12 @@ final class Sphero: Robot {
     override func setMainLED(color: RobotColor) {
         runner?.send(.setLED(color))
     }
+
+    override func vibrate(durationS: Int = 10) {
+        runner?.send(.vibrate(durationS: durationS))
+    }
+    
+    override func spin(durationS: Int = 10) {
+        runner?.send(.spin(durationS: durationS))
+    }
 }
