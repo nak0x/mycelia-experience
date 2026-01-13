@@ -45,7 +45,7 @@ class WsHub:
             await self.broadcast_action("00-lost-client", client_id)
 
         async with self._lock:
-            self.logger.log("WS DISCONNECT", client_id)
+            self.logger.log("WS DISCONNECT", client_id or "UNAUTHENTICATED")
             if client_id is None:
                 print("[WS] client disconnected.")
             self._clients.discard(ws)

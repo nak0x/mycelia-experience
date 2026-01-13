@@ -146,7 +146,13 @@ class Logger:
     def _validate_message(message: str) -> str:
         if not isinstance(message, str):
             raise TypeError("message doit être une chaîne.")
+
+        # Retire tous les retours à la ligne (et évite les doubles espaces)
+        message = message.replace("\r\n", "\n").replace("\r", "\n")
+        message = " ".join(message.splitlines())  # join avec espace
+        message = " ".join(message.split())       # compacte les espaces / tabs
         message = message.strip()
+
         if not message:
             raise ValueError("message ne peut pas être vide.")
         return message
