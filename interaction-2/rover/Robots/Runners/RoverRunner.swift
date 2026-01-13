@@ -47,6 +47,7 @@ class RoverRunner {
             : .specificRVR(name: robot.bluetoothName)
 
         var cfg = SyncsControllerConfig(deviceSelector: deviceSelector)
+        cfg.logLevel = .note // Reduce log spam (ignores .info)
 
         cfg.stateDidChangeCallback = { [weak self] state in
             guard let self = self else { return }
@@ -158,6 +159,12 @@ class RoverRunner {
                                 blue: color.b
                             )
                             val.doLED = true
+                            
+                        case .vibrate:
+                            break
+                            
+                        case .spin:
+                             break
                         }
 
                         // Consume command

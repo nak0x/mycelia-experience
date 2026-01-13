@@ -81,9 +81,14 @@ final class SpheroRunner {
                 "cmdHeading",
                 "cmdDir",
                 "cmdSeconds",
+                "cmdColor",
                 "doRollForSeconds",
                 "doStop",
-                "sample"
+                "doSetLED",
+                "doVibrate",
+                "doSpin",
+                "sample",
+                "counter"
             ]) { val in
 
                 //------------------------------------------------------
@@ -94,9 +99,14 @@ final class SpheroRunner {
                     val.cmdHeading = SyncsHeading(0)
                     val.cmdDir = SyncsDir.forward
                     val.cmdSeconds = 1
+                    
+                    val.cmdColor = SyncsColor(red: 0, green: 0, blue: 0)
 
                     val.doRollForSeconds = false
                     val.doStop = false
+                    val.doSetLED = false
+                    val.doVibrate = false
+                    val.doSpin = false
                     val.sample = SyncsSample.unset
                 }
                 
@@ -127,6 +137,9 @@ final class SpheroRunner {
                                 // Reset flags
                                 val.doRollForSeconds = false
                                 val.doStop = false
+                                val.doSetLED = false
+                                val.doVibrate = false
+                                val.doSpin = false
                                 
                                 guard let cmd = self.pendingCommand else { return }
                                 
@@ -155,8 +168,13 @@ final class SpheroRunner {
                                 var heading: SyncsHeading = clampHeading(self.robot.heading)
                                 var dir: SyncsDir = .forward
                                 var seconds: Int = 1
+                                var color = SyncsColor(red: 0, green: 0, blue: 0)
+                                
                                 var shouldRoll = false
                                 var shouldStop = false
+                                var shouldSetLED = false
+                                var shouldVibrate = false
+                                var shouldSpin = false
                                 
                                 switch cmd {
                                     
@@ -187,9 +205,17 @@ final class SpheroRunner {
                                     heading = clampHeading(self.robot.heading)
                                     shouldStop = true
                                     
-                                case .setLED:
-                                    // Ignored for now (Bolt has matrix LEDs)
-                                    break
+                                case .setLED(let c):
+                                    color = SyncsColor(red: c.r, green: c.g, blue: c.b)
+                                    shouldSetLED = true
+                                    
+                                case .vibrate(let durationS):
+                                    seconds = max(1, durationS)
+                                    shouldVibrate = true
+                                    
+                                case .spin(let durationS):
+                                    seconds = max(1, durationS)
+                                    shouldSpin = true
                                 }
                                 
                                 // Write Pappe vars
@@ -197,8 +223,13 @@ final class SpheroRunner {
                                 val.cmdHeading = heading
                                 val.cmdDir = dir
                                 val.cmdSeconds = seconds
+                                val.cmdColor = color
+                                
                                 val.doRollForSeconds = shouldRoll
                                 val.doStop = shouldStop
+                                val.doSetLED = shouldSetLED
+                                val.doVibrate = shouldVibrate
+                                val.doSpin = shouldSpin
                                 
                                 // Consume command
                                 self.pendingCommand = nil
@@ -221,6 +252,62 @@ final class SpheroRunner {
                                 run(Syncs.StopRoll, [
                                     val.cmdHeading
                                 ])
+                            }
+                            
+                            `if` { val.doSetLED as Bool } then: {
+                                run(Syncs.SetMainLED, [val.cmdColor])
+                            }
+                            
+                            `if` { val.doVibrate as Bool } then: {
+                                exec { ctx.logInfo("Vibrate START") }
+                                // Stronger vibration: Max speed and longer duration for "larger gestures"
+                                // Loop frequency: 150ms + 150ms = 300ms per cycle (approx 3.3 Hz)
+                                // Total duration `val.cmdSeconds`.
+                                exec { val.counter = (val.cmdSeconds as Int) * 4 } 
+                                
+                                `repeat` {
+                                    // Forward FULL POWER
+                                    run(Syncs.Roll, [SyncsSpeed(255), val.cmdHeading, SyncsDir.forward])
+                                    run(Syncs.WaitMilliseconds, [150])
+                                    
+                                    // Backward FULL POWER
+                                    run(Syncs.Roll, [SyncsSpeed(255), val.cmdHeading, SyncsDir.backward])
+                                    run(Syncs.WaitMilliseconds, [150])
+                                    
+                                    exec { val.counter = (val.counter as Int) - 1 }
+                                } until: { (val.counter as Int) <= 0 }
+                                
+                                run(Syncs.StopRoll, [val.cmdHeading])
+                                exec { ctx.logInfo("Vibrate END") }
+                            }
+                            
+                            `if` { val.doSpin as Bool } then: {
+                                exec { ctx.logInfo("Spin START") }
+                                // Spin logic: Rotate 360 degrees multiple times
+                                // Strategy: full speed forward while drastically changing heading
+                                // Since we can't drive two motors independently easily in Syncs, we rotate the heading.
+                                // We'll update heading by 90 degrees every 50ms to create a fast spin effect.
+                                
+                                exec { val.counter = (val.cmdSeconds as Int) * 20 }
+                                
+                                `repeat` {
+                                    exec {
+                                        // Increment heading by 45 degrees
+                                        let h = (val.cmdHeading as UInt16) + 20
+                                        val.cmdHeading = SyncsHeading(h % 360)
+                                    }
+                                    
+                                    // Roll with speed 0 (just turn) or >0 to drift? 
+                                    // Try speed 0 for pure rotation if robot supports pivot.
+                                    // RVR supports pivot on speed 0.
+                                    run(Syncs.Roll, [SyncsSpeed(0), val.cmdHeading, SyncsDir.forward])
+                                    run(Syncs.WaitMilliseconds, [50])
+                                    
+                                    exec { val.counter = (val.counter as Int) - 1 }
+                                } until: { (val.counter as Int) <= 0 }
+                                
+                                run(Syncs.StopRoll, [val.cmdHeading])
+                                exec { ctx.logInfo("Spin END") }
                             }
                             
                             //------------------------------------------------------

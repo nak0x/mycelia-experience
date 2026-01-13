@@ -197,12 +197,82 @@ struct WebsocketSpheroView: View {
                             action: { connectRobot(at: index) }
                         )
                     } else {
-                        GlowingButton(
-                            title: "Disconnect",
-                            icon: "link.badge.plus",
-                            color: NeonTheme.accentPurple,
-                            action: { disconnectRobot(at: index) }
-                        )
+                        VStack(spacing: 12) {
+                            // 1. Connection
+                            GlowingButton(
+                                title: "Disconnect",
+                                icon: "link.badge.plus",
+                                color: NeonTheme.accentPurple,
+                                action: { disconnectRobot(at: index) }
+                            )
+                            
+                            Divider().background(Color.white.opacity(0.1))
+                            
+                            // 2. LED Controls
+                            HStack {
+                                Text("LED")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                ColorButton(color: .red, action: { robot?.setMainLED(color: .red) })
+                                ColorButton(color: .green, action: { robot?.setMainLED(color: .green) })
+                                ColorButton(color: .blue, action: { robot?.setMainLED(color: .blue) })
+                                ColorButton(color: .white, action: { robot?.setMainLED(color: .white) })
+                                ColorButton(color: .black, action: { robot?.setMainLED(color: .off) })
+                            }
+                            
+                            Divider().background(Color.white.opacity(0.1))
+                            
+                            // 3. Movement / Actions
+                            HStack {
+                                // Direction Arrows (Mini d-pad)
+                                HStack(spacing: 2) {
+                                    Button(action: { robot?.turn(degrees: -45) }) {
+                                        Image(systemName: "arrow.counterclockwise")
+                                            .padding(6)
+                                            .background(Color.white.opacity(0.1))
+                                            .cornerRadius(4)
+                                    }
+                                    
+                                    Button(action: { robot?.forward(speed: 60) }) {
+                                        Image(systemName: "arrow.up")
+                                            .padding(6)
+                                            .background(Color.white.opacity(0.1))
+                                            .cornerRadius(4)
+                                    }
+                                    
+                                    Button(action: { robot?.spin(durationS: 5) }) {
+                                        Image(systemName: "arrow.triangle.2.circlepath")
+                                            .padding(6)
+                                            .background(NeonTheme.accentCyan.opacity(0.3))
+                                            .cornerRadius(4)
+                                    }
+                                }
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                // Vibrate Action
+                                Button(action: { robot?.vibrate(durationS: 10) }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "waveform.path.ecg")
+                                        Text("VIB 10s")
+                                    }
+                                    .font(.system(size: 10, weight: .bold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(NeonTheme.accentYellow.opacity(0.2))
+                                    .foregroundColor(NeonTheme.accentYellow)
+                                    .cornerRadius(4)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .stroke(NeonTheme.accentYellow, lineWidth: 1)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -250,7 +320,7 @@ struct WebsocketSpheroView: View {
                     NeonCard {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 4) {
-                                ForEach(ws.logs, id: \.self) { log in
+                                ForEach(Array(ws.logs.enumerated()), id: \.offset) { index, log in
                                     Text(log)
                                         .font(.system(size: 10, design: .monospaced))
                                         .foregroundColor(NeonTheme.textSecondary)
@@ -403,6 +473,23 @@ struct WebsocketSpheroView: View {
             } else {
                 self.refreshAllBridges()
             }
+        }
+    }
+}
+
+struct ColorButton: View {
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Circle()
+                .fill(color)
+                .frame(width: 20, height: 20)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                )
         }
     }
 }
