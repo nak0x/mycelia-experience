@@ -1,4 +1,3 @@
-from framework.components.light_resistor import LightResistor
 import time
 
 class Shroom:
