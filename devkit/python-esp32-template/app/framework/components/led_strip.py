@@ -45,6 +45,7 @@ def scale_rgb_for_power(
 
 class LedStrip:
     def __init__(self, pin, pixel_num, max_current=2, default_color=(255, 255, 255)):
+        self.pixel_num = pixel_num
         self.np = NeoPixel(Pin(pin), pixel_num)
         self.default_color = scale_rgb_for_power(max_current, pixel_num, default_color)
 
