@@ -9,18 +9,18 @@ class MainController(Controller):
         self.interaction_2_done = False
         self.ws_authorize = True
         self.timer = Timer(200, self._authorize_ws)
-        Encoder(pinA=GPIO.GPIO25, pinB=GPIO.GPIO26, onCw=self.increment_mycelium, onCcw=self.decrement_mycelium, onChange=self.shake_sphero)
+        Encoder(pinA=GPIO.GPIO25, pinB=GPIO.GPIO26, onCw=self.increment, onCcw=self.decrement)
 
-    def shake_sphero(self, position, step):
+    def increment(self):
         if not self.interaction_2_done:
-            self._send_ws("03-shake-sphero")
-
-    def increment_mycelium(self):
-        if self.interaction_2_done:
+            self._send_ws("02-grass-increment")
+        else:
             self._send_ws("03-grow-mycelium")
 
-    def decrement_mycelium(self):
-        if self.interaction_2_done:
+    def decrement(self):
+        if not self.interaction_2_done:
+            self._send_ws("02-grass-decrement")
+        else:
             self._send_ws("03-shrink-mycelium")
 
     def _send_ws(self, action):
