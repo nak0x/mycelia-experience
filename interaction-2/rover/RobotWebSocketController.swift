@@ -114,9 +114,20 @@ class RobotWebSocketController {
         case "led-off":   robot.setMainLED(color: .off)
             
         // ===== INTERACTION 2 SCENARIO =====
-        case "02-rover-toggle", "01-interaction-done":
+        case "01-interaction-done":
             if wsManager.deviceId == "IOS-020101" {
-                print("🚀 Activation du Rover (Scenario Interaction 2)")
+                print("⏳ Début du délai de 10s avant activation...")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+                    print("🚀 Activation du Rover après délai (Scenario Interaction 2)")
+                    self?.robot.forward(speed: 70, durationS: 9)
+                }
+            } else {
+                print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
+            }
+
+        case "02-rover-toggle":
+            if wsManager.deviceId == "IOS-020101" {
+                print("🚀 Activation immédiate du Rover (Scenario Interaction 2)")
                 robot.forward(speed: 70, durationS: 9)
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
