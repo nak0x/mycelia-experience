@@ -1,10 +1,10 @@
-import type { Log } from '../../hooks/useSocketAudio';
+import type { LogFrame } from '../../types/frame';
 
 interface LogsDrawerProps {
     isOpen: boolean;
     setIsLogsOpen: (open: boolean) => void;
     isUIHidden: boolean;
-    logs: Log[];
+    logs: LogFrame[];
 }
 
 export function LogsDrawer({ isOpen, setIsLogsOpen, isUIHidden, logs }: LogsDrawerProps) {
@@ -25,9 +25,9 @@ export function LogsDrawer({ isOpen, setIsLogsOpen, isUIHidden, logs }: LogsDraw
                     <div className="text-gray-600 italic p-4 text-center">No logs available</div>
                 ) : (
                     <div className="space-y-2">
-                        {[...logs].sort((a, b) => b.metadata.timestamp - a.metadata.timestamp).map((log, index) => (
+                        {[...logs].sort((a, b) => b.receivedAt - a.receivedAt).map((log, index) => (
                             <div key={index} className="flex gap-4 border-b border-white/5 pb-2 hover:bg-white/5 transition-colors p-2">
-                                <span className="text-gray-500 w-24 shrink-0">{new Date(log.metadata.timestamp * 1000).toLocaleTimeString()}</span>
+                                <span className="text-gray-500 w-24 shrink-0">{new Date(log.receivedAt).toLocaleTimeString()}</span>
                                 <span className="text-green-400 w-32 shrink-0 font-bold">{log.action}</span>
                                 <span className="text-gray-400 w-32 shrink-0 border-r border-white/10 pr-4">{log.metadata.senderId}</span>
                                 <span className="text-gray-300 break-all">{JSON.stringify(log.value)}</span>
