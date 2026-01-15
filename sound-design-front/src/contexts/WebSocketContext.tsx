@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
-import type { Frame } from '../types/frame';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import type { Frame, LogFrame } from '../types/frame';
 
 interface WebSocketContextType {
   isConnected: boolean;
   lastFrame: Frame | null;
-  logs: Frame[];
+  logs: LogFrame[];
   sendJson: (data: Frame) => void;
 }
 
@@ -12,7 +12,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 
 export const WebSocketProvider = ({ url, children }: { url: string; children: ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
-  const [logs, setLogs] = useState<Frame[]>([]);
+  const [logs, setLogs] = useState<LogFrame[]>([]);
   const [lastFrame, setLastFrame] = useState<Frame | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
@@ -36,8 +36,9 @@ export const WebSocketProvider = ({ url, children }: { url: string; children: Re
       socketRef.current.onmessage = (event) => {
         try {
           const data: Frame = JSON.parse(event.data);
+          const logEntry: LogFrame = { ...data, receivedAt: Date.now() };
           setLastFrame(data);
-          setLogs(prevLogs => [data, ...prevLogs].slice(0, 50));
+          setLogs(prevLogs => [logEntry, ...prevLogs].slice(0, 50));
         } catch (e) {
           console.error("Erreur parsing JSON", e);
         }
