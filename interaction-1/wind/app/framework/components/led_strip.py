@@ -5,6 +5,7 @@ from framework.utils.frames.frame import Frame
 
 class LedStrip:
     def __init__(self, pin, pixel_num, default_color=(255, 255, 255)):
+        self.pixel_num = pixel_num
         self.np = NeoPixel(Pin(pin), pixel_num)
         self.default_color = default_color
 
