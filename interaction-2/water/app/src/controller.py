@@ -19,4 +19,10 @@ class WaterController(Controller):
         elif frame.action == "02-grass-decrement":
             self.grass_counter = max(0, self.grass_counter - 1)
             print(f"Grass counter: {self.grass_counter}")
+        
+        elif frame.action == "02-reset":
+            print(">> RESET command received")
+            self.grass_counter = 0
+            self.relay.open()
+            self.relay2.open()
 

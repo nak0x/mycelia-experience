@@ -43,4 +43,8 @@ class EarthController(Controller):
         self.balance_status = False
 
     def on_frame_received(self, frame: Frame):
-        pass
+        if frame.action == "02-reset":
+            print(">> RESET command received")
+            self.balance_status = False
+            self.last_status = None
+            print(">> State reset: balance_status = False")
