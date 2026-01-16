@@ -9,11 +9,8 @@ class Chanel:
         self.on_value = on_value
 
     def update(self, value):
-        if App().DEBUG:
-            print(f"MCP Chanel {self.name}: {value}")
-
         if self.on_value is not None:
-            self.on_value()
+            self.on_value(value)
 
 class MCP3008:
     def __init__(
