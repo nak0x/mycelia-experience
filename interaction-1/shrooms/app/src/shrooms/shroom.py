@@ -1,14 +1,14 @@
 import time
-import random
 from framework.components.mcp3008 import Chanel
+from framework.components.led_strip import LedStrip
 
 class Shroom:
-    def __init__(self, name, chanel, controler, threshold_drop=50, delta_ms=150,
+    def __init__(self, name, chanel, leds: LedStrip, threshold_drop=50, delta_ms=150,
                  cooldown_ms=1000, buf_size=32, start=0, span=3, has_sensor=False, lighten=False):
         
-        3self.chanel = Chanel(chanel, name, self.handle_light_level) if has_sensor else None
+        self.chanel = Chanel(chanel, name, self.handle_light_level) if has_sensor else None
         self.name = name
-        self.controller = controler
+        self.leds = leds
 
         self.led_config = {
             "span": span,
@@ -29,21 +29,14 @@ class Shroom:
 
         self._last_trigger = time.ticks_ms()
 
-    def setup_leds(self, start_pixel, end_pixel):
-        self.led_config["start_pixel"] = start_pixel
-        self.led_config["end_pixel"] = end_pixel
-
     def test_leds(self):
-        leds = self.controller.leds
         for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
-            print(f"Lighting pixel {i} of shroom {self.name}")
-            leds.set_pixel(i, (255, 155, 25), show=True)
+            self.leds.set_pixel(i, (255, 0, 0))
 
     def on_light_detected(self):
         if self.lighten:
             return
-
-        leds = self.controller.leds
+        
         for l in range(25):
             t = l / 24.0  # Normalize to 0-1
             factor = t * t  # Ease-in quadratic
@@ -52,11 +45,11 @@ class Shroom:
             b = int(25 * factor)
             print(f"Lighting shroom {self.name} with color ({r}, {g}, {b})")
             for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
-                leds.set_pixel(i, (r, g, b), show=False)
-            leds.display()
+                self.leds.set_pixel(i, (r, g, b), show=False)
+            self.leds.display()
             time.sleep(0.3)
 
-        leds.display()
+        self.leds.display()
         self.lighten = True
         print("%s: Lighten" % self.name)
 

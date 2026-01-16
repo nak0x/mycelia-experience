@@ -93,6 +93,41 @@
       "start": 268,
       "span": 6,
       "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 14",
+      "start": 335,
+      "span": 6,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 15",
+      "start": 350,
+      "span": 7,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 16",
+      "start": 366,
+      "span": 8,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 17",
+      "start": 388,
+      "span": 6,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 18",
+      "start": 403,
+      "span": 7,
+      "threshold_drop": 50
     }
   ]
 }

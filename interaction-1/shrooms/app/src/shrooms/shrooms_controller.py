@@ -1,17 +1,17 @@
-import time
 from framework.controller import Controller
 from framework.utils.ws.interface import WebsocketInterface
-from framework.app import App
 from .shroom import Shroom
 from framework.utils.abstract_singleton import SingletonBase
+from framework.components.led_strip import LedStrip
+from framework.components.mcp3008 import MCP3008
 import json
 
 
 class ShroomsController(Controller, SingletonBase):
-    shrooms = []
+    shrooms: list[Shroom] = []
     forest_lighten = False
 
-    def __init__(self, led_strip, mcp):
+    def __init__(self, led_strip: LedStrip, mcp: MCP3008):
         super().__init__()
         self.leds = led_strip
         self.mcp = mcp
@@ -30,7 +30,7 @@ class ShroomsController(Controller, SingletonBase):
             self.shrooms.append(Shroom(
                 name=shroom.get('name', 'shroom'),
                 chanel=shroom.get('chanel', 0),
-                controler=self,
+                leds=self.leds,
                 threshold_drop=shroom.get('threshold_drop', 50),
                 delta_ms=self.config.get('delta_ms', 150),
                 cooldown_ms=self.config.get('cooldown_ms', 1000),
@@ -44,13 +44,13 @@ class ShroomsController(Controller, SingletonBase):
         # Setup shroom chanels to MCP3008
         self.mcp.chanels = [shroom.chanel for shroom in self.shrooms if shroom.chanel is not None]
 
-        self.test_shrooms_lights()
+        # self.test_shrooms_lights()
 
     def test_shrooms_lights(self):
         for shroom in self.shrooms:
             print(f"Testing shroom {shroom.name} LEDs from {shroom.led_config['start_pixel']} to {shroom.led_config['end_pixel']}")
             shroom.test_leds()
-            # time.sleep(1)
+        self.leds.display()
 
     def update(self):
         self.mcp.update()
