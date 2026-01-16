@@ -4,7 +4,7 @@ from app.frames.frame import Frame
 from typing import List
 
 
-class CoreController(WsController):
+class Controller(WsController):
 
     async def on_ping(self, frame: Frame, ws: web.WebSocketResponse) -> None:
         print("[WS] PING received from", frame.sender_id)

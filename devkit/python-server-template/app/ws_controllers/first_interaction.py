@@ -4,11 +4,13 @@ from app.frames.frame import Frame
 import asyncio
 
 
-class CoreController(WsController):
+class Controller(WsController):
 
     def __init__(self, app: web.Application):
         super().__init__(app)
-        
+        self._reset()
+    
+    def _reset(self):
         self._shroom_forest_lighten = False
         self._wind_toggle = False
         self._rain_toggle = False
@@ -43,3 +45,6 @@ class CoreController(WsController):
             print("[WS] Interaction condition met! Broadcasting 01-interaction-done")
             # Broadcast to all clients
             await self.hub.broadcast_action("01-interaction-done", True)
+
+    async def on_reset(self, frame: Frame, ws: web.WebSocketResponse) -> None:
+        self._reset()

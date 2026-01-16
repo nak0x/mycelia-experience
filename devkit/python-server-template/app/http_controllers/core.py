@@ -3,7 +3,7 @@ from app.http_controllers.base import HttpController
 from app.frames.parser import parse_frame_from_request
 
 
-class CoreController(HttpController):
+class Controller(HttpController):
 
     async def health(self, request: web.Request) -> web.Response:
         # Health does not need Frame input, but still returns a Frame-like JSON if you want.

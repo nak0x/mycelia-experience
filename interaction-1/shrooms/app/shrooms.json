@@ -1,7 +1,98 @@
 {
-				"shrooms": [{
-								"chanel": 0,
-								"name": "Shroom 1",
-								"space": 5
-				}]
+  "delta_ms": 350,
+  "cooldown_ms": 1000,
+  "buf_size": 32,
+  "shrooms": [
+    {
+      "chanel": 0,
+      "name": "Shroom 1",
+      "start": 41,
+      "span": 5,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": 1,
+      "name": "Shroom 2",
+      "start": 61,
+      "span": 5,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": 2,
+      "name": "Shroom 3",
+      "start": 77,
+      "span": 6,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": 3,
+      "name": "Shroom 4",
+      "start": 95,
+      "span": 5,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": 4,
+      "name": "Shroom 5",
+      "start": 114,
+      "span": 4,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": 5,
+      "name": "Shroom 6",
+      "start": 141,
+      "span": 7,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": 6,
+      "name": "Shroom 7",
+      "start": 161,
+      "span": 6,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": 7,
+      "name": "Shroom 8",
+      "start": 182,
+      "span": 6,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 9",
+      "start": 199,
+      "span": 4,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 10",
+      "start": 214,
+      "span": 5,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 11",
+      "start": 227,
+      "span": 6,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 12",
+      "start": 250,
+      "span": 7,
+      "threshold_drop": 50
+    },
+    {
+      "chanel": null,
+      "name": "Shroom 13",
+      "start": 268,
+      "span": 6,
+      "threshold_drop": 50
+    }
+  ]
 }
