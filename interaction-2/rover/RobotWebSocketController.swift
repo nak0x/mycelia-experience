@@ -141,7 +141,13 @@ class RobotWebSocketController {
             }
             
         case "02-balance-toggle":
-            if case .bool(let val) = frame.value, val == true {
+            if case .null = frame.value {
+                if robot.bluetoothName == "SB-0994" {
+                    print("⚖️ [Vibrate Sequence] SB-0994")
+                    robot.vibrate(durationS: 1)
+                }
+            }
+            else if case .bool(let val) = frame.value, val == true {
                 if robot.bluetoothName == "SB-6C4C" {
                     print("⚖️ [Balance Sequence] SB-6C4C: Waiting 2s before move")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
