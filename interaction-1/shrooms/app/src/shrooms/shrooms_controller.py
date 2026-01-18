@@ -21,6 +21,11 @@ class ShroomsController(Controller, SingletonBase):
             self.config = json.loads(f.read())
         self.init_shrooms()
 
+    def reset(self):
+        for shroom in self.shrooms:
+            shroom.reset()
+        self.forest_lighten = False
+
     def init_shrooms(self):
         if self.config is None:
             return

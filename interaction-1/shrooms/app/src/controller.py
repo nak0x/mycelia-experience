@@ -1,6 +1,7 @@
 from framework.controller import Controller
 from framework.components.led_strip import LedStrip
 from framework.components.mcp3008 import MCP3008
+from framework.app import App
 import time
 
 from .shrooms.shrooms_controller import ShroomsController
@@ -16,3 +17,9 @@ class MainController(Controller):
         leds.clear()
         mcp = MCP3008()
         self.shrooms = ShroomsController(leds, mcp)
+
+        App().on_frame_received.append(self.handle_reset)
+
+    def handle_reset(self, frame):
+        if frame.action == "01_reset" or frame.action == "01-reset-shrooms":
+            self.shrooms.reset()

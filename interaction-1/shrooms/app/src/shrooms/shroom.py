@@ -29,6 +29,25 @@ class Shroom:
 
         self._last_trigger = time.ticks_ms()
 
+    def reset(self):
+        if self.lighten:
+            self.lighten = False
+            self._n = 0
+            self._head = 0
+            self._last_trigger = time.ticks_ms()
+            
+            # turn off LEDs
+            leds = self.controller.leds
+            for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
+                leds.set_pixel(i, (0, 0, 0), show=False)
+            leds.display()
+
+        print(f"{self.name}: Reset")
+
+    def setup_leds(self, start_pixel, end_pixel):
+        self.led_config["start_pixel"] = start_pixel
+        self.led_config["end_pixel"] = end_pixel
+
     def test_leds(self):
         for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
             self.leds.set_pixel(i, (255, 0, 0))
