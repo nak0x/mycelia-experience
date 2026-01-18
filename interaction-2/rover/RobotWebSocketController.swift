@@ -140,24 +140,24 @@ class RobotWebSocketController {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
             }
             
-        case "02-balance-toggle":
-            if case .null = frame.value {
-                if robot.bluetoothName == "SB-0994" {
-                    print("⚖️ [Vibrate Sequence] SB-0994")
-                    robot.vibrate(durationS: 1)
-                }
+        case "02-grass-increment":
+            if robot.bluetoothName == "SB-0994" {
+                print("⚖️ [Vibrate Sequence] SB-0994")
+                robot.vibrate(durationS: 1)
             }
-            else if case .bool(let val) = frame.value, val == true {
+
+        case "02-water-flow-toggle":
+            if case .bool(let val) = frame.value, val == true {
                 if robot.bluetoothName == "SB-6C4C" {
                     print("⚖️ [Balance Sequence] SB-6C4C: Waiting 2s before move")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
                          print("➡️ [Balance Sequence] SB-6C4C: Moving forward")
                          self?.robot.forward(speed: 60, durationS: 4)
                     }
                 }
                 else if robot.bluetoothName == "SB-42C1" {
                     print("⚖️ [Balance Sequence] SB-42C1: Waiting 12s before move")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 12) { [weak self] in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 13) { [weak self] in
                         print("➡️ [Balance Sequence] SB-42C1: Moving forward")
                         self?.robot.forward(speed: 60, durationS: 7)
                     }

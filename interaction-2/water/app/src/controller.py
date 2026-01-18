@@ -1,11 +1,12 @@
 from framework.controller import Controller
 from framework.utils.frames.frame import Frame
 from framework.components.relay import Relay
+import time
 
 class WaterController(Controller):
     
     def setup(self):
-        self.relay = Relay(27, "02-balance-toggle")
+        self.relay = Relay(27, "02-water-flow-toggle")
         self.relay2 = Relay(26, "02-grass-toggle")
         self.grass_counter = 0
 
@@ -15,6 +16,9 @@ class WaterController(Controller):
             print(f"Grass counter: {self.grass_counter}")
             if self.grass_counter >= 20:
                 self.relay2.close()
+                self.send_action("02-water-flow-toggle", True)
+                time.sleep(10)
+                self.relay.open()
 
         elif frame.action == "02-grass-decrement":
             self.grass_counter = max(0, self.grass_counter - 1)
