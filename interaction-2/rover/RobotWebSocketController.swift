@@ -11,12 +11,13 @@ class RobotWebSocketController {
     
     private let robot: Robot
     private let wsManager: WebSocketManager
+    private var listenerId: UUID?
     
     init(robot: Robot, wsManager: WebSocketManager) {
         self.robot = robot
         self.wsManager = wsManager
         
-        wsManager.onFrameReceived = { [weak self] frame in
+        self.listenerId = wsManager.addListener { [weak self] frame in
             self?.handleFrame(frame)
         }
         
@@ -25,6 +26,12 @@ class RobotWebSocketController {
         }
 
         sendNewConnection()
+    }
+    
+    deinit {
+        if let id = listenerId {
+            wsManager.removeListener(id)
+        }
     }
 
     private func sendNewConnection() {
@@ -131,6 +138,24 @@ class RobotWebSocketController {
                 robot.forward(speed: 70, durationS: 9)
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
+            }
+            
+        case "02-balance-toggle":
+            if case .bool(let val) = frame.value, val == true {
+                if robot.bluetoothName == "SB-6C4C" {
+                    print("⚖️ [Balance Sequence] SB-6C4C: Waiting 2s before move")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                         print("➡️ [Balance Sequence] SB-6C4C: Moving forward")
+                         self?.robot.forward(speed: 60, durationS: 4)
+                    }
+                }
+                else if robot.bluetoothName == "SB-42C1" {
+                    print("⚖️ [Balance Sequence] SB-42C1: Waiting 12s before move")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 12) { [weak self] in
+                        print("➡️ [Balance Sequence] SB-42C1: Moving forward")
+                        self?.robot.forward(speed: 60, durationS: 7)
+                    }
+                }
             }
             
         default:

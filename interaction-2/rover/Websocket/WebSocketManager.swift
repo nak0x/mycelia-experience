@@ -35,8 +35,8 @@ class WebSocketManager {
     /// Session URL pour le WebSocket
     private var urlSession: URLSession?
     
-    /// Callback appelé quand une frame est reçue
-    var onFrameReceived: ((Frame) -> Void)?
+    /// Observers : liste des callbacks (UUID -> Closure)
+    private var listeners: [UUID: (Frame) -> Void] = [:]
     
     /// Callback appelé quand la connexion change d'état
     var onConnectionChanged: ((Bool) -> Void)?
@@ -51,6 +51,21 @@ class WebSocketManager {
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 30
         self.urlSession = URLSession(configuration: config)
+    }
+    
+    // MARK: - Listeners Management
+    
+    /// Ajoute un listener pour recevoir les frames
+    /// - Returns: Un UUID identifiant le listener (pour le supprimer plus tard)
+    func addListener(_ listener: @escaping (Frame) -> Void) -> UUID {
+        let id = UUID()
+        listeners[id] = listener
+        return id
+    }
+    
+    /// Supprime un listener
+    func removeListener(_ id: UUID) {
+        listeners.removeValue(forKey: id)
     }
     
     // MARK: - Connection
@@ -132,7 +147,7 @@ class WebSocketManager {
         }
     }
     
-    /// Parse le JSON et appelle le callback onFrameReceived
+    /// Parse le JSON et appelle les listeners
     private func parseAndBroadcastFrame(jsonString: String) {
         guard let jsonData = jsonString.data(using: .utf8) else {
             addLog("⚠️ Impossible de convertir en Data")
@@ -142,12 +157,14 @@ class WebSocketManager {
         do {
             let frame = try JSONDecoder().decode(Frame.self, from: jsonData)
             
-            // On broadcast tout ce qui arrive, plus de filtrage receiverId
+            // On broadcast tout ce qui arrive
             addLog("✅ Frame reçue: \(frame.action) de \(frame.metadata.senderId)")
             
-            // Appelle le callback sur le main thread
+            // Appelle tous les listeners sur le main thread
             DispatchQueue.main.async {
-                self.onFrameReceived?(frame)
+                for listener in self.listeners.values {
+                    listener(frame)
+                }
             }
         } catch {
             addLog("❌ Erreur de parsing: \(error.localizedDescription)")

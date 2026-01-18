@@ -176,8 +176,8 @@ extension Robot {
         lastSample = sample
         
         // Log for analysis
-        print(String(format: "LOG_DATA: time=%.3f ax=%.3f ay=%.3f vx=%.3f vy=%.3f dv=%.3f mag=%.3f dist=%.2f",
-                     now, sample.ax, sample.ay, sample.vx, sample.vy, deltaV, accelMag, distanceTraveled))
+        // print(String(format: "LOG_DATA: time=%.3f ax=%.3f ay=%.3f vx=%.3f vy=%.3f dv=%.3f mag=%.3f dist=%.2f",
+        //              now, sample.ax, sample.ay, sample.vx, sample.vy, deltaV, accelMag, distanceTraveled))
         
         onSensorUpdate?(sample)
     }
