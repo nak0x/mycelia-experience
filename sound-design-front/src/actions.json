@@ -75,6 +75,22 @@
         {
             "action": "03-grow-shroom",
             "type": null
+        },
+        {
+            "action": "03-shrink-mycelium",
+            "type": null
+        },
+        {
+            "action": "03-interaction-done",
+            "type": "boolean"
+        },
+        {
+            "action": "03-interaction-done-background",
+            "type": "boolean"
         }
+        {
+            "action": "background",
+            "type": "boolean"
+        },
     ]
 }
