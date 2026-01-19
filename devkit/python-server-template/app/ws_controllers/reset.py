@@ -15,6 +15,6 @@ class Controller(WsController):
         self._interaction_1_done = False
 
     async def on_reset(self, frame: Frame, ws: web.WebSocketResponse) -> None:
-        self.hub.broadcast_action("01-reset", None)
-        self.hub.broadcast_action("02-reset", None)
-        self.hub.broadcast_action("03-reset", None)
+        await self.hub.broadcast_action("01-reset", None)
+        await self.hub.broadcast_action("02-reset", None)
+        await self.hub.broadcast_action("03-reset", None)
