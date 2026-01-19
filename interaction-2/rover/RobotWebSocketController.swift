@@ -21,9 +21,9 @@ class RobotWebSocketController {
             self?.handleFrame(frame)
         }
         
-        robot.onImpact = { [weak self] in
-            self?.sendImpactFrame()
-        }
+        // robot.onImpact = { [weak self] in
+        //     self?.sendImpactFrame()
+        // }
 
         sendNewConnection()
     }
@@ -47,18 +47,18 @@ class RobotWebSocketController {
         print("🚀 Connexion établie avec le server")
     }
     
-    private func sendImpactFrame() {
-        guard robot.isConnected else { return }
+    // private func sendImpactFrame() {
+    //     guard robot.isConnected else { return }
         
-        let frame = Frame(
-            senderId: wsManager.deviceId,
-            action: "02-sphero-impact",
-            value: .bool(true)
-        )
+    //     let frame = Frame(
+    //         senderId: wsManager.deviceId,
+    //         action: "02-sphero-impact",
+    //         value: .bool(true)
+    //     )
         
-        wsManager.sendFrame(frame)
-        print("💥 Impact envoyé via WebSocket")
-    }
+    //     wsManager.sendFrame(frame)
+    //     print("💥 Impact envoyé via WebSocket")
+    // }
     
     private func handleFrame(_ frame: Frame) {
         guard robot.isConnected else {
@@ -126,7 +126,7 @@ class RobotWebSocketController {
                 print("⏳ Début du délai de 10s avant activation...")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
                     print("🚀 Activation du Rover après délai (Scenario Interaction 2)")
-                    self?.robot.forward(speed: 70, durationS: 9)
+                    self?.robot.forward(speed: 90, durationS: 6)
                 }
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
@@ -135,7 +135,7 @@ class RobotWebSocketController {
         case "02-rover-toggle":
             if wsManager.deviceId == "IOS-020101" {
                 print("🚀 Activation immédiate du Rover (Scenario Interaction 2)")
-                robot.forward(speed: 70, durationS: 9)
+                robot.forward(speed: 90, durationS: 6)
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
             }
@@ -143,7 +143,7 @@ class RobotWebSocketController {
         case "02-grass-increment":
             if robot.bluetoothName == "SB-0994" {
                 print("⚖️ [Vibrate Sequence] SB-0994")
-                robot.vibrate(durationS: 1)
+                robot.vibrate(durationS: 10)
             }
 
         case "02-water-flow-toggle":
