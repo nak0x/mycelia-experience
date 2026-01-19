@@ -7,14 +7,8 @@ import time
 class WaterController(Controller):
     
     def setup(self):
-        self.relay = Relay(27, "02-water-flow-toggle")
-        self.relay2 = Relay(26, "02-grass-toggle")
-        
-        # État initial:
-        # Relay (Water) NO -> open() = 0 (OFF)
-        # Relay2 (Grass) NC -> open() = 0 (ON)
-        self.relay.open()
-        self.relay2.open()
+        self.relay = Relay(27, False)  # Water (NO)
+        self.relay2 = Relay(26, False) # Grass (NC)
         
         self.grass_counter = 0
 
@@ -22,11 +16,25 @@ class WaterController(Controller):
         if frame.action == "02-grass-increment":
             self.grass_counter += 1
             if self.grass_counter >= 20:
-                self.relay2.close()
+                print("Watering sequence started")
+                
+                # Turn OFF Grass (Open Circuit)
+                self.relay2.open()
+                
+                # Turn ON Water (Close Circuit)
+                self.relay.open()
+                
                 print("Watering...")
                 WebsocketInterface().send_value("02-water-flow-toggle", True)
+                
                 time.sleep(10)
-                self.relay.open()
+                
+                # Turn OFF Water (Open Circuit)
+                self.relay.close()
+                
+                # Turn ON Grass (Close Circuit)
+                self.relay2.close()
+                
                 print("Watering finished")
 
         elif frame.action == "02-grass-decrement":
@@ -35,6 +43,13 @@ class WaterController(Controller):
         elif frame.action == "02-reset":
             print(">> RESET command received")
             self.grass_counter = 0
-            self.relay.open()
-            self.relay2.open()
+            self.relay.close()   # Water OFF
+            self.relay2.close() # Grass ON
 
+        elif frame.action == "02-water-flow-toggle":
+            if isinstance(frame.value, bool):
+                self.relay.open() if frame.value == True else self.relay.close()
+
+        elif frame.action == "02-grass-toggle":
+            if isinstance(frame.value, bool):
+                self.relay2.open() if frame.value == True else self.relay2.close()
