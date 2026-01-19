@@ -6,7 +6,7 @@
         },
         {
             "action": "01-reset",
-            "type": null
+            "type": "boolean"
         },
         {
             "action": "02-reset",
