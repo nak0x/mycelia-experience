@@ -126,7 +126,7 @@ class RobotWebSocketController {
                 print("⏳ Début du délai de 10s avant activation...")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
                     print("🚀 Activation du Rover après délai (Scenario Interaction 2)")
-                    self?.robot.forward(speed: 90, durationS: 6)
+                    self?.robot.forward(speed: 90, durationS: 8)
                 }
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
@@ -135,7 +135,7 @@ class RobotWebSocketController {
         case "02-rover-toggle":
             if wsManager.deviceId == "IOS-020101" {
                 print("🚀 Activation immédiate du Rover (Scenario Interaction 2)")
-                robot.forward(speed: 90, durationS: 6)
+                robot.forward(speed: 90, durationS: 8)
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
             }
@@ -152,14 +152,14 @@ class RobotWebSocketController {
                     print("⚖️ [Balance Sequence] SB-6C4C: Waiting 2s before move")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
                          print("➡️ [Balance Sequence] SB-6C4C: Moving forward")
-                         self?.robot.forward(speed: 60, durationS: 4)
+                         self?.robot.forward(speed: 60, durationS: 6)
                     }
                 }
                 else if robot.bluetoothName == "SB-42C1" {
                     print("⚖️ [Balance Sequence] SB-42C1: Waiting 12s before move")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 13) { [weak self] in
                         print("➡️ [Balance Sequence] SB-42C1: Moving forward")
-                        self?.robot.forward(speed: 60, durationS: 7)
+                        self?.robot.forward(speed: 60, durationS: 10)
                     }
                 }
             }
