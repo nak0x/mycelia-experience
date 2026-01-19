@@ -5,18 +5,17 @@ from framework.utils.frames.frame import Frame
 class Relay:
     is_open = False
 
-    def __init__(self, pin, action = None, on_payload_received = None):
-        self.pin = Pin(pin, Pin.OUT)
-        self.action = action
-        self.on_payload_received_callback = on_payload_received
-        App().on_frame_received.append(self.on_frame_received)
+    def __init__(self, pin, normally_open: bool = False):
+        self.open_value = 0 if normally_open else 1
+        self.close_value = 1 if normally_open else 0
+        self.pin = Pin(pin, Pin.OUT, value=self.close_value)
 
     def open(self):
-        self.pin.value(0)
+        self.pin.value(self.open_value)
         self.is_open = True
 
     def close(self):
-        self.pin.value(1)
+        self.pin.value(self.close_value)
         self.is_open = False
 
     def toggle(self):
@@ -25,12 +24,3 @@ class Relay:
         else:
             self.open()
 
-    def on_frame_received(self, frame: Frame):
-        print(f"Relay : {frame} \n action: {self.action}")
-        if self.action != frame.action:
-            return
-
-        if self.on_payload_received_callback is not None:
-            self.on_payload_received_callback(self, frame.value)
-        elif isinstance(frame.value, bool):
-            self.close() if frame.value else self.open()

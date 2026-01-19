@@ -639,3 +639,191 @@ Callbacks are triggered only when values change.
 | `humidity`
 | Last measured humidity (%)
 |===
+
+---
+
+== MCP3008
+
+The `MCP3008` component is a SPI-based 8-channel analog-to-digital converter (ADC).
+It allows the ESP32 to read analog voltages from up to 8 independent channels.
+It automatically registers itself in the application update loop (`App().update`).
+
+=== Wiring
+
+The MCP3008 is a 16-pin DIP integrated circuit. Pin layout (with sensor facing you):
+
+[source,text]
+----
+           ┌─────────┐
+       CH0 ┤1      16├ VDD (3.3V)
+       CH1 ┤2      15├ VREF (3.3V)
+       CH2 ┤3      14├ AGND (GND)
+       CH3 ┤4      13├ CLK (SCK)
+       CH4 ┤5      12├ DOUT (MISO)
+       CH5 ┤6      11├ DIN (MOSI)
+       CH6 ┤7      10├ CS
+       CH7 ┤8       9├ DGND (GND)
+           └─────────┘
+----
+
+|===
+| MCP3008 Pin | ESP32 Pin | Description
+
+| VDD (16)
+| 3.3V
+| Power supply
+
+| VREF (15)
+| 3.3V
+| Analog reference voltage
+
+| AGND (14)
+| GND
+| Analog ground
+
+| DGND (9)
+| GND
+| Digital ground
+
+| CLK (13)
+| GPIO 18 (default)
+| SPI Clock (SCK)
+
+| DIN (11)
+| GPIO 23 (default)
+| SPI Master Out Slave In (MOSI)
+
+| DOUT (12)
+| GPIO 19 (default)
+| SPI Master In Slave Out (MISO)
+
+| CS (10)
+| GPIO 5 (default)
+| Chip Select (active low)
+
+| CH0–CH7 (1–8)
+| Analog inputs
+| Input voltage: 0V to VREF (0V to 3.3V)
+|===
+
+IMPORTANT:
+* Ensure common ground between ESP32 and MCP3008.
+* VREF and AGND should be at the same potential as the ESP32 3.3V and GND for single-ended measurements.
+* The MCP3008 reads analog voltages in the range 0V to VREF and converts them to 10-bit digital values (0–1023).
+* Do not exceed 3.3V on any analog input channel.
+
+=== Usage
+
+[,python]
+----
+from src.components.mcp3008 import MCP3008, Chanel
+from src.utils.gpio import GPIO
+
+# Define channels
+ch0 = Chanel(pin=0, name="sensor-0", on_value=lambda: print("CH0 updated"))
+ch1 = Chanel(pin=1, name="sensor-1")
+
+# Create MCP3008 with channels
+adc = MCP3008(
+    chanels=[ch0, ch1],
+    cs=GPIO.GPIO5,
+    sck=GPIO.GPIO18,
+    mosi=GPIO.GPIO23,
+    miso=GPIO.GPIO19,
+    vspi=2,
+    bauds=1_000_000,
+    read_delay=20  # milliseconds
+)
+----
+
+=== Configuration
+
+|===
+| Parameter | Description | Default
+
+| `chanels`
+| List of `Chanel` objects to read
+| `[]`
+
+| `cs`
+| GPIO pin for Chip Select
+| `5`
+
+| `sck`
+| GPIO pin for SPI Clock
+| `18`
+
+| `mosi`
+| GPIO pin for MOSI (Master Out Slave In)
+| `23`
+
+| `miso`
+| GPIO pin for MISO (Master In Slave Out)
+| `19`
+
+| `vspi`
+| SPI host (0=HSPI, 1=VSPI for ESP32)
+| `2` (VSPI)
+
+| `bauds`
+| SPI baud rate in bits per second
+| `1_000_000` (1 MHz)
+
+| `polarity`
+| SPI clock polarity (0 or 1)
+| `0`
+
+| `phase`
+| SPI clock phase (0 or 1)
+| `0`
+
+| `read_delay`
+| Polling interval in milliseconds
+| `20`
+|===
+
+=== Chanel (sic) Class
+
+The `Chanel` class represents a single ADC input channel.
+
+|===
+| Parameter | Description | Default
+
+| `pin`
+| Channel number (0–7) on the MCP3008
+| Required
+
+| `name`
+| Descriptive name for debugging
+| Required
+
+| `on_value`
+| Optional callback function called when the channel is read
+| `None`
+|===
+
+=== Behavior
+
+* The MCP3008 polls all configured channels at the specified `read_delay` interval.
+* For each channel, the raw ADC value (0–1023) is read via SPI.
+* If an `on_value` callback is defined for a `Chanel`, it is invoked after reading.
+* In debug mode (`App().DEBUG == True`), each read is printed: `MCP Chanel {name}: {value}`.
+
+=== Technical Details
+
+* **Resolution**: 10-bit (0–1023)
+* **Conversion Time**: ~3 µs per channel read
+* **Input Impedance**: ~100 kΩ (typical)
+* **SPI Protocol**: Single-ended, single conversion mode
+  - Command byte: `0x01` (start bit)
+  - Configuration byte: `0x80 | (channel << 4)` (single-ended mode + channel select)
+  - Output bytes: Clock out the result
+
+For additional details, refer to the https://cdn-shop.adafruit.com/datasheets/MCP3008.pdf[MCP3008 datasheet].
+
+=== Notes
+
+* Channel numbering is 0–7 (not 1–8).
+* Ensure stable power and decoupling capacitors (0.1 µF) near VDD and VREF for best results.
+* If readings are noisy, increase the `read_delay` or add external capacitors on the analog inputs.
+* The component does not perform any filtering; consider adding low-pass RC filters for analog signals if needed.
