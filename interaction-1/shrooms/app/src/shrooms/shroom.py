@@ -1,12 +1,14 @@
 import time
 from framework.components.mcp3008 import Chanel
 from framework.components.led_strip import LedStrip
+from src.shrooms.animator import Animator, DeadAnimation
+from framework.app import App
 
 class Shroom:
     def __init__(self, name, chanel, leds: LedStrip, threshold_drop=50, delta_ms=150,
-                 cooldown_ms=1000, buf_size=32, start=0, span=3, has_sensor=False, lighten=False):
+                 cooldown_ms=1000, buf_size=32, start=0, span=3, lighten=False):
         
-        self.chanel = Chanel(chanel, name, self.handle_light_level) if has_sensor else None
+        self.chanel = Chanel(chanel, name, self.handle_light_level) if chanel is not None else None
         self.name = name
         self.leds = leds
 
@@ -21,26 +23,35 @@ class Shroom:
         self.cooldown_ms = int(cooldown_ms)
         self.lighten = lighten
 
-        # ring buffer: times + levels
-        self._ts = [0] * buf_size
-        self._lv = [0] * buf_size
-        self._n = 0            # number of valid samples (<= buf_size)
-        self._head = 0         # next write index
-
+        # Track max level in the current window
+        self._max_level = 0
+        self._max_level_time = time.ticks_ms()
         self._last_trigger = time.ticks_ms()
+        
+        # Setup animator with animations
+        self.animator = Animator()
+        
+        # Start the living animation by default
+        self.animator.play(DeadAnimation())
 
+        App().update.append(self.update)
+
+    def update(self):
+        self.display_color(self.animator.update())
+
+    def display_color(self, color):
+        print(f"{self.name}: Display color {color}")
+        for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
+            self.leds.set_pixel(i, color, show=False)
+        self.leds.display()
+    
     def reset(self):
         if self.lighten:
             self.lighten = False
-            self._n = 0
-            self._head = 0
-            self._last_trigger = time.ticks_ms()
-            
-            # turn off LEDs
-            leds = self.controller.leds
-            for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
-                leds.set_pixel(i, (0, 0, 0), show=False)
-            leds.display()
+            self._max_level = 0
+            self._max_level_time = time.ticks_ms()
+
+            self.display_color((0, 0, 0))
 
         print(f"{self.name}: Reset")
 
@@ -49,76 +60,52 @@ class Shroom:
         self.led_config["end_pixel"] = end_pixel
 
     def test_leds(self):
-        for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
-            self.leds.set_pixel(i, (255, 0, 0))
+        self.display_color((255, 0, 0))
 
     def on_light_detected(self):
         if self.lighten:
             return
         
-        for l in range(25):
-            t = l / 24.0  # Normalize to 0-1
-            factor = t * t  # Ease-in quadratic
-            r = int(255 * factor)
-            g = int(155 * factor)
-            b = int(25 * factor)
-            print(f"Lighting shroom {self.name} with color ({r}, {g}, {b})")
-            for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
-                self.leds.set_pixel(i, (r, g, b), show=False)
-            self.leds.display()
-            time.sleep(0.3)
-
-        self.leds.display()
+        # Play glow animation
         self.lighten = True
-        print("%s: Lighten" % self.name)
+        self.animator.play(self.animator.state.to_lighting() if self.animator.state is not None else None)
+        print(f"{self.name}: Light detected, starting glow")
+
+    def glow(self):
+        if self.lighten:
+            return
+        
+        self.lighten = True
+        self.animator.play(self.animator.state.to_lighting() if self.animator.state is not None else None)
+        print(f"{self.name}: Glow triggered programmatically")
 
     def handle_light_level(self, level, *args):
+        if self.chanel is None:
+            return
+
+        # print(f"{self.name}: Ch {self.chanel.pin} : Light level {level} : {self.lighten}")
         if self.lighten:
             return
 
-        # print(f"{self.name}: {level}")
         now = time.ticks_ms()
-        level = int(level)
 
-        # cooldown
-        if time.ticks_diff(now, self._last_trigger) < self.cooldown_ms:
-            # still store samples or not? typically no, keeps logic clean
-            return
-
-        # push into ring buffer
-        self._ts[self._head] = now
-        self._lv[self._head] = level
-        self._head = (self._head + 1) % len(self._ts)
-        if self._n < len(self._ts):
-            self._n += 1
-
-        if self._n < 2:
-            return
-
-        # Find the maximum level within the last delta_ms window.
-        # We walk backwards from newest sample until we exit the window or exhaust samples.
-        max_lv = level
-        i = (self._head - 1) % len(self._ts)  # newest index
-        checked = 0
-
-        while checked < self._n:
-            t = self._ts[i]
-            lv = self._lv[i]
-
-            if time.ticks_diff(now, t) > self.delta_ms:
-                break
-
-            if lv > max_lv:
-                max_lv = lv
-
-            i = (i - 1) % len(self._ts)
-            checked += 1
-
-        drop = max_lv - level
+        # Check for drop threshold first (before window reset)
+        drop = self._max_level - level
         if drop >= self.threshold_drop:
-            self._last_trigger = now
-            self.on_light_detected()
+            # Check cooldown before triggering
+            if time.ticks_diff(now, self._last_trigger) >= self.cooldown_ms:
+                self._last_trigger = now
+                self._max_level = level  # Reset for next detection
+                self._max_level_time = now
+                self.on_light_detected()
+                return
 
-            # reset buffer to avoid retriggering on the same falling edge
-            self._n = 0
-            self._head = 0
+        # Check if window has expired, reset max level
+        if time.ticks_diff(now, self._max_level_time) > self.delta_ms:
+            self._max_level = level
+            self._max_level_time = now
+            return
+
+        # Update max level in current window
+        if level > self._max_level:
+            self._max_level = level

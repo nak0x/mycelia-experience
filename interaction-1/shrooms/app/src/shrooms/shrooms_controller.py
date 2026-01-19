@@ -34,7 +34,7 @@ class ShroomsController(Controller, SingletonBase):
         for shroom in self.config.get('shrooms', []):
             self.shrooms.append(Shroom(
                 name=shroom.get('name', 'shroom'),
-                chanel=shroom.get('chanel', 0),
+                chanel=shroom.get('chanel', None),
                 leds=self.leds,
                 threshold_drop=shroom.get('threshold_drop', 50),
                 delta_ms=self.config.get('delta_ms', 150),
@@ -42,7 +42,6 @@ class ShroomsController(Controller, SingletonBase):
                 buf_size=self.config.get('buf_size', 32),
                 start=shroom.get('start', 0),
                 span=shroom.get('span', 3),
-                has_sensor=shroom.get('has_sensor', False),
                 lighten=shroom.get('lighten', False)
             ))
 
@@ -61,8 +60,12 @@ class ShroomsController(Controller, SingletonBase):
         self.mcp.update()
         if self.is_shrooms_lighten() and not self.forest_lighten:
             self.forest_lighten = True
+            for shroom in self.shrooms:
+                print(f"Setting shroom {shroom.name} lighten to True")
+                shroom.lighten = True
+                shroom.glow()
             print("Shroom forest lighten !")
             WebsocketInterface().send_value("01-shroom-forest-lighten", self.forest_lighten)
 
     def is_shrooms_lighten(self):
-        return all(shroom.lighten for shroom in self.shrooms)
+        return all(shroom.lighten for shroom in self.shrooms if shroom.chanel is not None)

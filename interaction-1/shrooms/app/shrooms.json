@@ -1,10 +1,11 @@
 {
-  "delta_ms": 350,
-  "cooldown_ms": 1000,
+  "delta_ms": 150,
+  "cooldown_ms": 500,
   "buf_size": 32,
+  "auto-animate": true,
   "shrooms": [
     {
-      "chanel": 0,
+      "chanel": null,
       "name": "Shroom 1",
       "start": 41,
       "span": 5,
@@ -18,49 +19,49 @@
       "threshold_drop": 50
     },
     {
-      "chanel": 2,
+      "chanel": null,
       "name": "Shroom 3",
       "start": 77,
       "span": 6,
       "threshold_drop": 50
     },
     {
-      "chanel": 3,
+      "chanel": 6,
       "name": "Shroom 4",
       "start": 95,
       "span": 5,
       "threshold_drop": 50
     },
     {
-      "chanel": 4,
+      "chanel": null,
       "name": "Shroom 5",
       "start": 114,
-      "span": 4,
+      "span": 5,
       "threshold_drop": 50
     },
     {
       "chanel": 5,
       "name": "Shroom 6",
       "start": 141,
-      "span": 7,
+      "span": 8,
       "threshold_drop": 50
     },
     {
-      "chanel": 6,
+      "chanel": 0,
       "name": "Shroom 7",
       "start": 161,
       "span": 6,
       "threshold_drop": 50
     },
     {
-      "chanel": 7,
+      "chanel": null,
       "name": "Shroom 8",
       "start": 182,
       "span": 6,
       "threshold_drop": 50
     },
     {
-      "chanel": null,
+      "chanel": 4,
       "name": "Shroom 9",
       "start": 199,
       "span": 4,
@@ -88,7 +89,7 @@
       "threshold_drop": 50
     },
     {
-      "chanel": null,
+      "chanel": 7,
       "name": "Shroom 13",
       "start": 268,
       "span": 6,
@@ -102,14 +103,14 @@
       "threshold_drop": 50
     },
     {
-      "chanel": null,
+      "chanel": 3,
       "name": "Shroom 15",
       "start": 350,
       "span": 7,
       "threshold_drop": 50
     },
     {
-      "chanel": null,
+      "chanel": 2,
       "name": "Shroom 16",
       "start": 366,
       "span": 8,
