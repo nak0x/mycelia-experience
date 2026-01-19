@@ -1,12 +1,14 @@
 import time
 from framework.components.mcp3008 import Chanel
 from framework.components.led_strip import LedStrip
-from src.shrooms.animator import Animator, DeadAnimation
-from framework.app import App
+from src.shrooms.animations.animation import Animation
+from src.shrooms.animations.dead_animation import DeadAnimation
+from src.shrooms.animations.lighting_animation import LightingAnimation
+from .light_drop_detector import LightDropDetector
 
 class Shroom:
     def __init__(self, name, chanel, leds: LedStrip, threshold_drop=50, delta_ms=150,
-                 cooldown_ms=1000, buf_size=32, start=0, span=3, lighten=False):
+                 cooldown_ms=1000, buf_size=32, start=0, span=3):
         
         self.chanel = Chanel(chanel, name, self.handle_light_level) if chanel is not None else None
         self.name = name
@@ -21,38 +23,50 @@ class Shroom:
         self.threshold_drop = int(threshold_drop)   # required drop amount
         self.delta_ms = int(delta_ms)               # time window in ms
         self.cooldown_ms = int(cooldown_ms)
-        self.lighten = lighten
 
         # Track max level in the current window
         self._max_level = 0
         self._max_level_time = time.ticks_ms()
         self._last_trigger = time.ticks_ms()
         
-        # Setup animator with animations
-        self.animator = Animator()
-        
-        # Start the living animation by default
-        self.animator.play(DeadAnimation())
+        # Setup default animation
+        self.animation = None
+        self.update_animation(DeadAnimation(self))
 
-        App().update.append(self.update)
+        self.detector = LightDropDetector(
+            drop_trigger=self.threshold_drop,
+            cooldown_ms=self.cooldown_ms,
+            ema_alpha=0.35,
+            baseline_alpha=0.02,
+            min_drop_rate=0.0,  # mets 0.15 si tu veux éviter les dérives lentes
+        )
 
-    def update(self):
-        self.display_color(self.animator.update())
+    def update_animation(self, animation: Animation):
+        print(f"{self.name}: Updating animation")
+        self.animation.on_exit() if self.animation is not None else None
+        self.animation = animation
+        self.animation.on_enter()
+
+    def display_pixel(self, i, color):
+        self.leds.set_pixel(i + self.led_config['start_pixel'], color, show=False)
 
     def display_color(self, color):
-        print(f"{self.name}: Display color {color}")
         for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
             self.leds.set_pixel(i, color, show=False)
         self.leds.display()
+
+    @property
+    def lighten(self):
+        return isinstance(self.animation, LightingAnimation)
     
     def reset(self):
-        if self.lighten:
-            self.lighten = False
-            self._max_level = 0
-            self._max_level_time = time.ticks_ms()
+        self.detector.reset()
+        self.animation.to_dead()
 
-            self.display_color((0, 0, 0))
+        self._max_level = 0
+        self._max_level_time = time.ticks_ms()
 
+        self.display_color((0, 0, 0))
         print(f"{self.name}: Reset")
 
     def setup_leds(self, start_pixel, end_pixel):
@@ -67,45 +81,18 @@ class Shroom:
             return
         
         # Play glow animation
-        self.lighten = True
-        self.animator.play(self.animator.state.to_lighting() if self.animator.state is not None else None)
+        self.animation.to_lighting()
         print(f"{self.name}: Light detected, starting glow")
 
-    def glow(self):
-        if self.lighten:
-            return
-        
-        self.lighten = True
-        self.animator.play(self.animator.state.to_lighting() if self.animator.state is not None else None)
-        print(f"{self.name}: Glow triggered programmatically")
+    def to_lighting(self):
+        self.animation.to_lighting()
+
+    def to_living(self):
+        self.animation.to_living()
 
     def handle_light_level(self, level, *args):
-        if self.chanel is None:
+        if self.chanel is None or self.lighten:
             return
 
-        # print(f"{self.name}: Ch {self.chanel.pin} : Light level {level} : {self.lighten}")
-        if self.lighten:
-            return
-
-        now = time.ticks_ms()
-
-        # Check for drop threshold first (before window reset)
-        drop = self._max_level - level
-        if drop >= self.threshold_drop:
-            # Check cooldown before triggering
-            if time.ticks_diff(now, self._last_trigger) >= self.cooldown_ms:
-                self._last_trigger = now
-                self._max_level = level  # Reset for next detection
-                self._max_level_time = now
-                self.on_light_detected()
-                return
-
-        # Check if window has expired, reset max level
-        if time.ticks_diff(now, self._max_level_time) > self.delta_ms:
-            self._max_level = level
-            self._max_level_time = now
-            return
-
-        # Update max level in current window
-        if level > self._max_level:
-            self._max_level = level
+        if self.detector.update(level):
+            self.on_light_detected()

@@ -4,12 +4,14 @@ from .shroom import Shroom
 from framework.utils.abstract_singleton import SingletonBase
 from framework.components.led_strip import LedStrip
 from framework.components.mcp3008 import MCP3008
+from framework.utils.timer import Timer
 import json
 
 
 class ShroomsController(Controller, SingletonBase):
     shrooms: list[Shroom] = []
     forest_lighten = False
+    delta_living_ms = 5000
 
     def __init__(self, led_strip: LedStrip, mcp: MCP3008):
         super().__init__()
@@ -42,7 +44,6 @@ class ShroomsController(Controller, SingletonBase):
                 buf_size=self.config.get('buf_size', 32),
                 start=shroom.get('start', 0),
                 span=shroom.get('span', 3),
-                lighten=shroom.get('lighten', False)
             ))
 
         # Setup shroom chanels to MCP3008
@@ -61,11 +62,15 @@ class ShroomsController(Controller, SingletonBase):
         if self.is_shrooms_lighten() and not self.forest_lighten:
             self.forest_lighten = True
             for shroom in self.shrooms:
-                print(f"Setting shroom {shroom.name} lighten to True")
-                shroom.lighten = True
-                shroom.glow()
+                shroom.to_lighting()
+
+            Timer(self.delta_living_ms, self.to_shrooms_living, autostart=True)
             print("Shroom forest lighten !")
             WebsocketInterface().send_value("01-shroom-forest-lighten", self.forest_lighten)
+
+    def to_shrooms_living(self):
+        for shroom in self.shrooms:
+            shroom.to_living() if shroom.chanel is None else None
 
     def is_shrooms_lighten(self):
         return all(shroom.lighten for shroom in self.shrooms if shroom.chanel is not None)
