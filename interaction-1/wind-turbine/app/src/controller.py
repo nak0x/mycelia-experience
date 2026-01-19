@@ -12,35 +12,52 @@ class WindTurbineController(Controller):
 
     def setup(self):
         # =====================================================
-        # 🎚️ MICROPHONE TUNING (EXPO CRITIQUE)
+        # DEBUG
         # =====================================================
-
-        # Niveau sonore (enveloppe)
-        self.min_level = 10       # bruit minimum ignoré
-        self.max_level = 50       # souffle fort → LED 5
-
-        # Envelope dynamics
-        self.mic_attack = 0.35    # montée rapide
-        self.mic_release = 0.80   # descente rapide (extinction LEDs)
-
-        # Baseline behavior (anti "souffle long qui s'annule")
-        self.mic_alpha_base = 0.01   # vitesse de drift quand calme
-        self.mic_gate_ratio = 0.45   # plus bas = baseline gelée plus tôt
-        self.mic_gate_offset = 2.0   # marge absolue ADC
+        self.debug_progress = True       # <- mets False pour couper
+        self.debug_every_ms = 120        # log ~8 fois/sec
+        self._last_debug_ms = 0
 
         # =====================================================
-        # 🎚️ LED / MAPPING
+        # MICROPHONE TUNING
         # =====================================================
+        self.min_level = 12
 
-        # Courbe convexe : facile au début, dur à la fin
-        self.threshold_power = 2.0
+        self.mic_attack = 0.25
+        self.mic_release = 0.85
 
-        # Hystérésis (stabilité visuelle)
-        self.hyst_up = 7
-        self.hyst_down = 10
+        self.mic_alpha_base = 0.01
+        self.mic_gate_ratio = 0.45
+        self.mic_gate_offset = 2.0
 
-        # Trigger websocket
+        # =====================================================
+        # AUTO CALIBRATION (ROBUST PEAK TRACKING)
+        # =====================================================
+        self.peak_cap = 200
+        self.peak_min = 80
+        self.peak_margin = 1.08
+        self.peak_decay = 0.995
+
+        self.observed_peak = float(self.peak_min)
+
+        # =====================================================
+        # FEELING PROGRESSION (rampe + courbe)
+        # =====================================================
+        self.progress = 0.0
+        self.progress_up = 0.5
+        self.progress_down = 0.20
+
+        self.curve_gamma = 0.1
+
+        self.level_hyst = 0.08
+        self.full_on_progress = 0.86
+
+        # =====================================================
+        # TRIGGER
+        # =====================================================
         self.trigger_cooldown_ms = 1500
+        self.trigger_hold_ms = 180
+        self._full_since_ms = None
 
         # =====================================================
         # STATE
@@ -60,25 +77,15 @@ class WindTurbineController(Controller):
         self.strip.display()
 
         # =====================================================
-        # BUILD THRESHOLDS
-        # =====================================================
-        self.thresholds = self.build_thresholds()
-
-        if App().config.debug:
-            print("[WindTurbine] thresholds:", [int(t) for t in self.thresholds])
-
-        # =====================================================
         # MICROPHONE
         # =====================================================
         Microphone(
             pin=32,
             on_level=self.on_mic_level,
 
-            # envelope
             attack=self.mic_attack,
             release=self.mic_release,
 
-            # baseline
             alpha_base=self.mic_alpha_base,
             gate_ratio=self.mic_gate_ratio,
             gate_offset=self.mic_gate_offset,
@@ -90,69 +97,138 @@ class WindTurbineController(Controller):
             print("[WindTurbine] Controller setup done")
 
     # =====================================================
-    # BUILD NON-LINEAR THRESHOLDS
-    # =====================================================
-    def build_thresholds(self):
-        span = self.max_level - self.min_level
-        thresholds = []
-
-        for i in range(1, self.MAX_LEVEL + 1):
-            t = self.min_level + span * ((i / self.MAX_LEVEL) ** self.threshold_power)
-            thresholds.append(t)
-
-        return thresholds
-
-    # =====================================================
     # MICROPHONE CALLBACK
     # =====================================================
     def on_mic_level(self, mic_level: int, raw: int, baseline: int):
-        if App().config.debug:
-            print(f"[WindTurbine] mic={mic_level} raw={raw} base={baseline}")
+        # ---------------------------
+        # 1) ROBUST PEAK UPDATE (cap outliers)
+        # ---------------------------
+        if mic_level > self.min_level:
+            mic_clip = mic_level if mic_level < self.peak_cap else self.peak_cap
 
-        target = self.map_to_5_levels(mic_level)
-        new_level = self.apply_hysteresis(mic_level, target)
+            if mic_clip > self.observed_peak:
+                self.observed_peak = float(mic_clip)
+            else:
+                self.observed_peak *= self.peak_decay
+
+        if self.observed_peak < self.peak_min:
+            self.observed_peak = float(self.peak_min)
+
+        dyn_max = self.observed_peak * self.peak_margin
+
+        # ---------------------------
+        # 2) Normalize 0..1 using dyn_max
+        # ---------------------------
+        span = dyn_max - self.min_level
+        if span <= 1:
+            return
+
+        x = (mic_level - self.min_level) / span
+        if x < 0.0:
+            x = 0.0
+        elif x > 1.0:
+            x = 1.0
+
+        # ---------------------------
+        # 3) Ease curve
+        # ---------------------------
+        x_eased = x ** self.curve_gamma
+
+        # ---------------------------
+        # 4) Slew-rate smoothing (rampe)
+        # ---------------------------
+        a = self.progress_up if x_eased > self.progress else self.progress_down
+        self.progress = (1 - a) * self.progress + a * x_eased
+
+        # ---------------------------
+        # 5) Progress -> target level
+        # ---------------------------
+        if self.progress >= self.full_on_progress:
+            target_level = self.MAX_LEVEL
+        else:
+            # arrondi stable au lieu de int() (évite le 0.999 -> 4)
+            target_level = int(self.progress * self.MAX_LEVEL + 0.5)
+
+        # clamp
+        if target_level < 0:
+            target_level = 0
+        elif target_level > self.MAX_LEVEL:
+            target_level = self.MAX_LEVEL
+
+        # ---------------------------
+        # 6) Anti-flicker hysteresis
+        # ---------------------------
+        new_level = self.apply_level_hysteresis(self.progress, target_level)
 
         if new_level != self.level:
             self.level = new_level
             self.render_level()
 
-        if self.level == self.MAX_LEVEL:
-            self.try_trigger()
+        # ---------------------------
+        # 7) DEBUG THROTTLED + BAR
+        # ---------------------------
+        self.debug_log(mic_level, raw, baseline, dyn_max, x, x_eased, a)
+
+        # ---------------------------
+        # 8) Trigger hold
+        # ---------------------------
+        self.handle_trigger_hold()
 
     # =====================================================
-    # LEVEL MAPPING (THRESHOLDS)
+    # DEBUG LOG
     # =====================================================
-    def map_to_5_levels(self, mic_level: int) -> int:
-        if mic_level <= self.min_level:
-            return 0
+    def debug_log(self, mic_level, raw, baseline, dyn_max, x, x_eased, a):
+        if not self.debug_progress:
+            return
 
-        level = 0
-        for i, thr in enumerate(self.thresholds, start=1):
-            if mic_level >= thr:
-                level = i
+        now = time.ticks_ms()
+        if time.ticks_diff(now, self._last_debug_ms) < self.debug_every_ms:
+            return
+        self._last_debug_ms = now
 
-        return level
+        # Barre 0..20
+        width = 20
+        filled = int(self.progress * width)
+        if filled < 0:
+            filled = 0
+        if filled > width:
+            filled = width
+        bar = "[" + ("#" * filled) + ("-" * (width - filled)) + "]"
+
+        print(
+            f"[WindTurbineDBG] mic={mic_level:3d} raw={raw:4d} base={baseline:4d} "
+            f"peak={int(self.observed_peak):3d} dyn={int(dyn_max):3d} "
+            f"x={x:0.2f} eased={x_eased:0.2f} a={a:0.2f} "
+            f"prog={self.progress:0.2f} lvl={self.level} {bar}"
+        )
 
     # =====================================================
-    # HYSTERESIS (ANTI-FLICKER)
+    # LEVEL HYSTERESIS (ANTI-FLICKER)
     # =====================================================
-    def apply_hysteresis(self, mic_level: int, target_level: int) -> int:
+    def apply_level_hysteresis(self, p: float, target_level: int) -> int:
         current = self.level
 
-        # Entrée depuis 0
-        if current == 0:
-            return 1 if mic_level >= (self.thresholds[0] + self.hyst_up) else 0
+        # Override: si on est au-dessus du seuil full, on force 5
+        if p >= self.full_on_progress:
+            return self.MAX_LEVEL
 
-        # Montée
+        if target_level == current:
+            return current
+
+        # Seuil "milieu" entre niveaux: 0.1,0.3,0.5,0.7,0.9
+        def mid_threshold(level_int: int) -> float:
+            # level_int est le niveau qu'on veut atteindre (1..MAX_LEVEL)
+            return (level_int - 0.5) / self.MAX_LEVEL
+
         if target_level > current:
             next_level = min(current + 1, self.MAX_LEVEL)
-            thr_up = self.thresholds[next_level - 1] + self.hyst_up
-            return next_level if mic_level >= thr_up else current
+            need = mid_threshold(next_level) + self.level_hyst
+            return next_level if p >= need else current
 
-        # Descente
         if target_level < current:
-            thr_down = self.thresholds[current - 1] - self.hyst_down
-            return current - 1 if mic_level <= thr_down else current
+            # pour descendre, on repasse sous le milieu du niveau courant
+            need = mid_threshold(current) - self.level_hyst
+            return current - 1 if p <= need else current
 
         return current
 
@@ -161,29 +237,43 @@ class WindTurbineController(Controller):
     # =====================================================
     def render_level(self):
         self.strip.clear()
-
         for i in range(self.level):
             index = i + 6
             self.strip.set_pixel(index)
-
         self.strip.display()
+
+    # =====================================================
+    # TRIGGER HOLD
+    # =====================================================
+    def handle_trigger_hold(self):
+        now = time.ticks_ms()
+
+        if self.level == self.MAX_LEVEL:
+            if self._full_since_ms is None:
+                self._full_since_ms = now
+
+            if time.ticks_diff(now, self._full_since_ms) >= self.trigger_hold_ms:
+                self.try_trigger()
+                self._full_since_ms = None
+        else:
+            self._full_since_ms = None
 
     # =====================================================
     # ACTION
     # =====================================================
     def try_trigger(self):
         now = time.ticks_ms()
-
         if time.ticks_diff(now, self.last_trigger) < self.trigger_cooldown_ms:
             return
 
         self.last_trigger = now
 
         if App().config.debug:
-            print("[WindTurbine] 🌬️ LEVEL 5 → WIND TRIGGER")
+            print("[WindTurbine] 🌬️ FULL CHARGE → WIND TRIGGER")
 
         WebsocketInterface().send_value("01-wind-toggle", True)
 
-        # Reset visuel
+        # reset visuel
+        self.progress = 0.0
         self.level = 0
         self.render_level()
