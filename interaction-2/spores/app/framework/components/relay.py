@@ -5,15 +5,17 @@ from framework.utils.frames.frame import Frame
 class Relay:
     is_open = False
 
-    def __init__(self, pin):
-        self.pin = Pin(pin, Pin.OUT, value=1)
+    def __init__(self, pin, normally_open: bool = False):
+        self.open_value = 0 if normally_open else 1
+        self.close_value = 1 if normally_open else 0
+        self.pin = Pin(pin, Pin.OUT, value=self.close_value)
 
     def open(self):
-        self.pin.value(0)
+        self.pin.value(self.open_value)
         self.is_open = True
 
     def close(self):
-        self.pin.value(1)
+        self.pin.value(self.close_value)
         self.is_open = False
 
     def toggle(self):
@@ -21,3 +23,4 @@ class Relay:
             self.close()
         else:
             self.open()
+
