@@ -11,12 +11,8 @@ class FanController(Controller):
 
         self.timer = Timer(15000, self.turn_off_fan)
 
-        # Relay initialized with action=None so it ignores frames by default
-        self.fan = Relay(
-            pin_power,
-            action=None, 
-            on_payload_received=self.on_fan_command
-        )
+        # Relay initialized
+        self.fan = Relay(pin_power)
         self.fan.open()
 
         # Register manual dispatcher
