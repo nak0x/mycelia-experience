@@ -107,7 +107,7 @@ function AppContent() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black font-mono text-white selection:bg-white selection:text-black">
+    <div className="relative w-screen h-svh overflow-hidden bg-black font-mono text-white selection:bg-white selection:text-black">
       
       <VideoBackground 
         videoRef={videoRef}
