@@ -12,7 +12,7 @@ class MainController(Controller):
 
     def start_animation(self):
         self.relay.open()
-        self.animation_timer.start()
+        # self.animation_timer.start()
 
     def stop_animation(self):
         self.relay.close()
