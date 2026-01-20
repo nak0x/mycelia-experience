@@ -59,6 +59,19 @@ class RobotWebSocketController {
     //     wsManager.sendFrame(frame)
     //     print("💥 Impact envoyé via WebSocket")
     // }
+
+    private func sendInteractonDoneFrame() {
+        guard robot.isConnected else { return }
+        
+        let frame = Frame(
+            senderId: wsManager.deviceId,
+            action: "02-interaction-done",
+            value: .bool(true)
+        )
+        
+        wsManager.sendFrame(frame)
+        print("🚀 Interaction terminée via WebSocket")
+    }
     
     private func handleFrame(_ frame: Frame) {
         guard robot.isConnected else {
@@ -161,6 +174,9 @@ class RobotWebSocketController {
                         print("➡️ [Balance Sequence] SB-42C1: Moving forward")
                         self?.robot.forward(speed: 60, durationS: 10)
                     }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
+                    self?.sendInteractonDoneFrame()
                 }
             }
             
