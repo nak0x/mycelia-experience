@@ -16,12 +16,16 @@ class VideoPlayer {
         this.chaptersList = document.getElementById('chaptersList');
         this.fullscreenBtn = document.getElementById('fullscreenBtn');
         this.toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+        this.autoplayModal = document.getElementById('autoplayModal');
+        this.playButton = document.getElementById('playButton');
 
         // Chapter management
         this.chapters = [];
         this.currentChapterIndex = -1;
         this.currentChapterSlug = null;
         this.repeatTimeoutId = null;
+        this.chapterPlayCount = {}; // Track how many times each chapter has played
+        this.autoPlaySequence = null; // Define auto-play sequence with play counts
 
         // WebSocket
         this.ws = null;
@@ -44,6 +48,18 @@ class VideoPlayer {
         // Sidebar toggle
         this.toggleSidebarBtn.addEventListener('click', () => {
             this.sidebar.classList.toggle('active');
+        });
+
+        // Play button in modal
+        this.playButton.addEventListener('click', () => {
+            this.hideAutoplayModal();
+            this.video.play()
+                .then(() => {
+                    console.log("Video started playing.");
+                })
+                .catch(error => {
+                    console.error("Error attempting to play video:", error);
+                });
         });
 
         // Video events
@@ -90,10 +106,19 @@ class VideoPlayer {
 
     handleWebSocketMessage(data) {
         try {
+            console.log('[WebSocket Message Received]', data);
             const message = JSON.parse(data);
-            if (message.action && message.value === null) {
+            console.log('[WebSocket Parsed]', message);
+            if (message.action) {
                 const slug = message.action;
-                this.switchToChapterBySlug(slug);
+                const value = message.value !== undefined ? message.value : 'not specified';
+                console.log(`[WebSocket Action] Processing chapter change to: ${slug} (value: ${value})`);
+                // Process if value is true, null, undefined, or not specified. Skip only if value is explicitly false.
+                if (message.value !== false) {
+                    this.switchToChapterBySlug(slug);
+                } else {
+                    console.log(`[WebSocket Action] Skipped - value is false`);
+                }
             }
         } catch (error) {
             console.error('Failed to parse WebSocket message:', error);
@@ -119,6 +144,12 @@ class VideoPlayer {
 
             this.chapters = config.chapters || [];
             this.video.src = config.videoSource || '';
+            this.autoPlaySequence = config.autoPlaySequence || null;
+            
+            // Initialize play count for each chapter
+            this.chapters.forEach(chapter => {
+                this.chapterPlayCount[chapter.slug] = 0;
+            });
             
             // Initialize WebSocket after loading config
             this.wsUrl = config.websocketUrl || await this.getDefaultWebSocketUrl();
@@ -126,14 +157,17 @@ class VideoPlayer {
 
             this.renderChapters();
 
-            // Auto-play first chapter after video is ready
-            if (this.chapters.length > 0) {
-                const playFirstChapter = () => {
+            // Auto-play from the first chapter in autoPlaySequence if defined
+            const playFirstChapter = () => {
+                if (this.autoPlaySequence && this.autoPlaySequence.length > 0) {
+                    const firstSlug = this.autoPlaySequence[0].slug;
+                    this.switchToChapterBySlug(firstSlug);
+                } else if (this.chapters.length > 0) {
                     this.switchToChapter(0);
-                    this.video.removeEventListener('loadedmetadata', playFirstChapter);
-                };
-                this.video.addEventListener('loadedmetadata', playFirstChapter);
-            }
+                }
+                this.video.removeEventListener('loadedmetadata', playFirstChapter);
+            };
+            this.video.addEventListener('loadedmetadata', playFirstChapter);
         } catch (error) {
             console.error('Failed to load config:', error);
         }
@@ -172,6 +206,18 @@ class VideoPlayer {
         this.currentChapterIndex = index;
         this.currentChapterSlug = chapter.slug;
 
+        // Reset play count for this chapter if it's in the autoPlaySequence
+        if (this.autoPlaySequence) {
+            const sequenceEntry = this.autoPlaySequence.find(entry => entry.slug === chapter.slug);
+            if (sequenceEntry) {
+                this.chapterPlayCount[chapter.slug] = 0;
+                console.log(`[Reset Play Count] Reset "${chapter.title}" play count to 0`);
+            }
+        }
+
+        console.log(`[Chapter Changed] Switching to chapter ${index + 1}: "${chapter.title}" (${chapter.slug})`);
+        console.log(`  - Start time: ${chapter.startTime}s | End time: ${chapter.endTime}s`);
+
         // Set video time
         this.video.currentTime = chapter.startTime;
 
@@ -180,14 +226,29 @@ class VideoPlayer {
 
         // Play video
         if (this.video.paused) {
-            this.video.play();
+            this.video.play()
+                .then(() => {
+                    console.log("Video started playing.");
+                })
+                .catch(error => {
+                    // Autoplay was prevented
+                    if (error.name === "NotAllowedError") {
+                        console.warn("Autoplay was prevented. User interaction required.", error);
+                        this.showAutoplayModal();
+                    } else {
+                        console.error("Error attempting to play video:", error);
+                    }
+                });
         }
     }
 
     switchToChapterBySlug(slug) {
         const index = this.chapters.findIndex(ch => ch.slug === slug);
         if (index !== -1) {
+            console.log(`[WebSocket] Chapter requested via WebSocket: ${slug}`);
             this.switchToChapter(index);
+        } else {
+            console.warn(`[WebSocket] Chapter not found: ${slug}`);
         }
     }
 
@@ -213,7 +274,49 @@ class VideoPlayer {
 
         // Prevent video from going past chapter boundary
         if (this.video.currentTime >= chapterEndTime) {
-            this.video.currentTime = currentChapter.startTime;
+            // Check if we should auto-advance to next chapter
+            if (this.autoPlaySequence) {
+                const currentSlug = currentChapter.slug;
+                const sequenceEntry = this.autoPlaySequence.find(entry => entry.slug === currentSlug);
+                
+                if (sequenceEntry) {
+                    // If playCount is -1, loop indefinitely
+                    if (sequenceEntry.playCount === -1) {
+                        console.log(`[Auto-Loop] Looping chapter "${currentChapter.title}" (infinite loop)`);
+                        this.video.currentTime = currentChapter.startTime;
+                    }
+                    // If playCount is 1, play once without looping - advance immediately
+                    else if (sequenceEntry.playCount === 1) {
+                        if (nextChapter) {
+                            console.log(`[Auto-Advance] Chapter "${currentChapter.title}" finished. Auto-advancing to next chapter...`);
+                            this.switchToChapter(this.currentChapterIndex + 1);
+                        } else {
+                            console.log(`[Loop] Looping chapter "${currentChapter.title}" (no next chapter)`);
+                            this.video.currentTime = currentChapter.startTime;
+                        }
+                    }
+                    // If playCount > 1, loop until we've looped enough times
+                    else if (this.chapterPlayCount[currentSlug] < sequenceEntry.playCount - 1) {
+                        this.chapterPlayCount[currentSlug]++;
+                        console.log(`[Auto-Loop] Looping chapter "${currentChapter.title}" (${this.chapterPlayCount[currentSlug]}/${sequenceEntry.playCount - 1} loops)`);
+                        this.video.currentTime = currentChapter.startTime;
+                    }
+                    else if (nextChapter) {
+                        console.log(`[Auto-Advance] Chapter "${currentChapter.title}" finished. Auto-advancing to next chapter...`);
+                        this.switchToChapter(this.currentChapterIndex + 1);
+                    } else {
+                        console.log(`[Loop] Looping chapter "${currentChapter.title}" (no next chapter)`);
+                        this.video.currentTime = currentChapter.startTime;
+                    }
+                } else {
+                    // Chapter not in sequence, just loop
+                    console.log(`[Loop] Looping chapter "${currentChapter.title}" (not in sequence)`);
+                    this.video.currentTime = currentChapter.startTime;
+                }
+            } else {
+                // Default behavior: loop current chapter
+                this.video.currentTime = currentChapter.startTime;
+            }
         }
     }
 
@@ -238,6 +341,14 @@ class VideoPlayer {
                 console.error(`Error attempting to exit fullscreen: ${err.message}`);
             });
         }
+    }
+
+    showAutoplayModal() {
+        this.autoplayModal.classList.remove('hidden');
+    }
+
+    hideAutoplayModal() {
+        this.autoplayModal.classList.add('hidden');
     }
 }
 
