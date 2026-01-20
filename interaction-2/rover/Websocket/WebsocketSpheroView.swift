@@ -21,6 +21,9 @@ struct WebsocketSpheroView: View {
     @State private var showLogs: Bool = false
     @State private var showAddSheet: Bool = false
     
+    // Known Spheros
+    let knownSpheros = ["SB-0994", "SB-6C4C", "SB-42C1", "SB-F682"]
+    
     // Grid Setup
     let columns = [
         GridItem(.adaptive(minimum: 300, maximum: 500), spacing: 20)
@@ -353,8 +356,29 @@ struct WebsocketSpheroView: View {
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
-                CustomTextField(text: $newRobotId, placeholder: "Bluetooth Name (e.g. SB-XXXX)", bg: NeonTheme.bgInput, color: .white)
+                Menu {
+                    ForEach(knownSpheros, id: \.self) { sphero in
+                        Button(sphero) {
+                            newRobotId = sphero
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(newRobotId.isEmpty ? "Select Sphero" : newRobotId)
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .foregroundColor(.white.opacity(0.6))
+                    }
                     .padding()
+                    .background(NeonTheme.bgInput)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                }
+                .padding()
                 
                 GlowingButton(
                     title: "Add to Swarm",
