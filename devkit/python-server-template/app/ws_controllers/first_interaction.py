@@ -15,6 +15,7 @@ class Controller(WsController):
         self._wind_toggle = False
         self._rain_toggle = False
         self._interaction_1_done = False
+        print(f"Reset interaction 1")
 
     async def on_shroom_forest_lighten(self, frame: Frame, ws: web.WebSocketResponse) -> None:
         if frame.value == True:

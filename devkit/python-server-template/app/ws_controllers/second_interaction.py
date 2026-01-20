@@ -14,6 +14,7 @@ class Controller(WsController):
         self._sphero_impact = False
         self._balance_toggle = False
         self._interaction_2_done = False
+        print(f"Reset interaction 2")
 
     async def on_sphero_impact(self, frame: Frame, ws: web.WebSocketResponse) -> None:
         if frame.value == True:
