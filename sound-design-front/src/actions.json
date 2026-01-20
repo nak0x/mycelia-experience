@@ -87,10 +87,10 @@
         {
             "action": "03-interaction-done-background",
             "type": "boolean"
-        }
+        },
         {
             "action": "background",
             "type": "boolean"
-        },
+        }
     ]
 }
