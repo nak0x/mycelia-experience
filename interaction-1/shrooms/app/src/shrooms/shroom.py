@@ -60,12 +60,16 @@ class Shroom:
         return isinstance(self.animation, LightingAnimation)
     
     def reset(self):
+        # 1) Reset detector avec la valeur courante (si dispo)
         self.detector.reset()
-        self.animation.to_dead()
 
-        self._max_level = 0
-        self._max_level_time = time.ticks_ms()
+        # 2) Forcer DeadAnimation (ne dépend pas de l’anim courante)
+        self.update_animation(DeadAnimation(self))
 
+        # 3) petite fenêtre où on ignore les triggers (stabilisation)
+        self._ignore_light_until = time.ticks_add(time.ticks_ms(), 120)
+
+        # 4) LEDs off
         self.display_color((0, 0, 0))
         print(f"{self.name}: Reset")
 
@@ -91,8 +95,22 @@ class Shroom:
         self.animation.to_living()
 
     def handle_light_level(self, level, *args):
-        if self.chanel is None or self.lighten:
+        if self.chanel is None:
             return
 
-        if self.detector.update(level):
+        # Ignore juste après reset
+        if hasattr(self, "_ignore_light_until"):
+            if time.ticks_diff(time.ticks_ms(), self._ignore_light_until) < 0:
+                # Important: on fait quand même tourner le detector pour qu'il se calibre
+                self.detector.update(level)
+                return
+
+        # Important: même en Lighting, on nourrit le detector (sinon il "gèle")
+        triggered = self.detector.update(level)
+
+        # Mais on ne déclenche jamais pendant Lighting
+        if self.lighten:
+            return
+
+        if triggered:
             self.on_light_detected()

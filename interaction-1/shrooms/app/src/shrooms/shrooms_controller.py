@@ -61,12 +61,15 @@ class ShroomsController(Controller, SingletonBase):
         self.mcp.update()
         if self.is_shrooms_lighten() and not self.forest_lighten:
             self.forest_lighten = True
-            for shroom in self.shrooms:
-                shroom.to_lighting()
+            self.to_shrooms_lighting()
 
-            Timer(self.delta_living_ms, self.to_shrooms_living, autostart=True)
             print("Shroom forest lighten !")
             WebsocketInterface().send_value("01-shroom-forest-lighten", self.forest_lighten)
+
+    def to_shrooms_lighting(self):
+        for shroom in self.shrooms:
+            shroom.to_lighting()
+        Timer(self.delta_living_ms, self.to_shrooms_living, autostart=True)
 
     def to_shrooms_living(self):
         for shroom in self.shrooms:
