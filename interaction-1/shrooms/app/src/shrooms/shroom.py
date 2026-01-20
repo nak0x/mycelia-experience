@@ -64,7 +64,7 @@ class Shroom:
         self.detector.reset()
 
         # 2) Forcer DeadAnimation (ne dépend pas de l’anim courante)
-        self.update_animation(DeadAnimation(self))
+        self.animation.to_dead()
 
         # 3) petite fenêtre où on ignore les triggers (stabilisation)
         self._ignore_light_until = time.ticks_add(time.ticks_ms(), 120)

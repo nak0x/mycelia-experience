@@ -16,7 +16,7 @@ class Animation:
         App().update.remove(self.handle)
 
     def handle(self):
-        raise NotImplementedError
+        pass
     
     def to_dead(self):
         pass

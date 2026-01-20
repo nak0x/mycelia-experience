@@ -16,7 +16,7 @@
       "name": "Shroom 2",
       "start": 61,
       "span": 5,
-      "threshold_drop": 70
+      "threshold_drop": 60
     },
     {
       "chanel": null,
@@ -30,7 +30,7 @@
       "name": "Shroom 4",
       "start": 95,
       "span": 5,
-      "threshold_drop": 170
+      "threshold_drop": 160
     },
     {
       "chanel": null,
@@ -44,14 +44,14 @@
       "name": "Shroom 6",
       "start": 141,
       "span": 8,
-      "threshold_drop": 270
+      "threshold_drop": 260
     },
     {
       "chanel": 0,
       "name": "Shroom 7",
       "start": 161,
       "span": 6,
-      "threshold_drop": 215
+      "threshold_drop": 205
     },
     {
       "chanel": null,
@@ -65,7 +65,7 @@
       "name": "Shroom 9",
       "start": 199,
       "span": 4,
-      "threshold_drop": 95
+      "threshold_drop": 85
     },
     {
       "chanel": null,
@@ -93,7 +93,7 @@
       "name": "Shroom 13",
       "start": 268,
       "span": 6,
-      "threshold_drop": 235
+      "threshold_drop": 225
     },
     {
       "chanel": null,
@@ -107,14 +107,14 @@
       "name": "Shroom 15",
       "start": 350,
       "span": 7,
-      "threshold_drop": 165
+      "threshold_drop": 155
     },
     {
       "chanel": 2,
       "name": "Shroom 16",
       "start": 366,
       "span": 8,
-      "threshold_drop": 285
+      "threshold_drop": 275
     },
     {
       "chanel": null,
@@ -132,3 +132,4 @@
     }
   ]
 }
+
