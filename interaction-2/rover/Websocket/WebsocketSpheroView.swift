@@ -22,7 +22,7 @@ struct WebsocketSpheroView: View {
     @State private var showAddSheet: Bool = false
     
     // Known Spheros
-    let knownSpheros = ["SB-0994", "SB-6C4C", "SB-42C1", "SB-F682"]
+    let knownSpheros = ["SB-0994", "SB-92B2", "SB-6C4C", "SB-42C1", "SB-F682"]
     
     // Grid Setup
     let columns = [

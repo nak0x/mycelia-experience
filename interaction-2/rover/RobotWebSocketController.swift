@@ -154,17 +154,17 @@ class RobotWebSocketController {
             }
             
         case "02-grass-increment":
-            if robot.bluetoothName == "SB-0994" {
-                print("⚖️ [Vibrate Sequence] SB-0994")
+            if robot.bluetoothName == "SB-92B2" {
+                print("⚖️ [Vibrate Sequence] SB-92B2")
                 robot.vibrate(durationS: 10)
             }
 
         case "02-water-flow-toggle":
             if case .bool(let val) = frame.value, val == true {
-                if robot.bluetoothName == "SB-6C4C" {
-                    print("⚖️ [Balance Sequence] SB-6C4C: Waiting 2s before move")
+                if robot.bluetoothName == "SB-F682" {
+                    print("⚖️ [Balance Sequence] SB-F682: Waiting 2s before move")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-                         print("➡️ [Balance Sequence] SB-6C4C: Moving forward")
+                         print("➡️ [Balance Sequence] SB-F682: Moving forward")
                          self?.robot.forward(speed: 60, durationS: 6)
                     }
                 }
