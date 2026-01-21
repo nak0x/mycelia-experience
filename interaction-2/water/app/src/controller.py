@@ -2,7 +2,7 @@ from framework.controller import Controller
 from framework.utils.frames.frame import Frame
 from framework.components.relay import Relay
 from framework.utils.ws.interface import WebsocketInterface
-import time
+from framework.utils.timer import Timer
 
 class WaterController(Controller):
     
@@ -11,31 +11,39 @@ class WaterController(Controller):
         self.relay2 = Relay(26, False) # Grass (NC)
         
         self.grass_counter = 0
+        self.grass_done = False
+
+    def start_watering(self):
+        print("Watering started")
+        # Turn OFF Grass (Open Circuit)
+        self.relay2.open()
+        
+        # Turn ON Water (Close Circuit)
+        WebsocketInterface().send_value("02-water-flow-toggle", True)
+        self.relay.open()
+    
+    def finish_watering(self):
+        # Turn OFF Water (Open Circuit)
+        WebsocketInterface().send_value("02-water-flow-toggle", False)
+        self.relay.close()
+        
+        # Turn ON Grass (Close Circuit)
+        self.relay2.close()
+        
+        print("Watering finished")
 
     def on_frame_received(self, frame: Frame):
         if frame.action == "02-grass-increment":
             self.grass_counter += 1
             if self.grass_counter >= 20:
-                print("Watering sequence started")
+                if self.grass_done:
+                    return
+                self.grass_done = True
                 
-                # Turn OFF Grass (Open Circuit)
-                self.relay2.open()
+                self.start_watering()
                 
-                # Turn ON Water (Close Circuit)
-                self.relay.open()
-                
-                print("Watering...")
-                WebsocketInterface().send_value("02-water-flow-toggle", True)
-                
-                time.sleep(10)
-                
-                # Turn OFF Water (Open Circuit)
-                self.relay.close()
-                
-                # Turn ON Grass (Close Circuit)
-                self.relay2.close()
-                
-                print("Watering finished")
+                # Non-blocking wait using framework Timer
+                Timer(20000, self.finish_watering, autostart=True)
 
         elif frame.action == "02-grass-decrement":
             self.grass_counter = max(0, self.grass_counter - 1)
