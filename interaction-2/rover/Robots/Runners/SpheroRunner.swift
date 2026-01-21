@@ -155,13 +155,7 @@ final class SpheroRunner {
                                     return SyncsHeading(UInt16(norm))
                                 }
                                 
-                                func msToSeconds(_ ms: Int) -> Int {
-                                    // Synchrosphere offers RollForSeconds(seconds: Int)
-                                    // Keep it simple: minimum 1 second.
-                                    let clamped = max(1, ms)
-                                    let secs = Int(ceil(Double(clamped) / 1000.0))
-                                    return max(1, secs)
-                                }
+
                                 
                                 // Defaults
                                 var speed: SyncsSpeed = 0
@@ -178,27 +172,27 @@ final class SpheroRunner {
                                 
                                 switch cmd {
                                     
-                                case .forward(let s, let durationMs):
+                                case .forward(let s, let durationS):
                                     speed = clampSpeed(s)
                                     heading = clampHeading(self.robot.heading)
                                     dir = SyncsDir.forward
-                                    seconds = msToSeconds(durationMs)
+                                    seconds = max(1, durationS)
                                     shouldRoll = true
                                     
-                                case .backward(let s, let durationMs):
+                                case .backward(let s, let durationS):
                                     speed = clampSpeed(s)
                                     heading = clampHeading(self.robot.heading)
                                     dir = SyncsDir.backward
-                                    seconds = msToSeconds(durationMs)
+                                    seconds = max(1, durationS)
                                     shouldRoll = true
                                     
-                                case .turn(let headingDeg, let durationMs):
+                                case .turn(let headingDeg, let durationS):
                                     // Simple turning command: speed 0 towards heading.
                                     // (The actual behavior depends on device firmware.)
                                     speed = clampSpeed(0)
                                     heading = clampHeading(headingDeg)
                                     dir = SyncsDir.forward
-                                    seconds = msToSeconds(durationMs)
+                                    seconds = max(1, durationS)
                                     shouldRoll = true
                                     
                                 case .stop:

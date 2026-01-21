@@ -12,19 +12,29 @@ class RobotWebSocketController {
     private let robot: Robot
     private let wsManager: WebSocketManager
     private var listenerId: UUID?
+
+    private var sphero1: String = "SB-92B2"
+    private var sphero2: String = "SB-F682"
+    private var sphero3: String = "SB-42C1"
+    
+    public var spheroNumber: Int?
     
     init(robot: Robot, wsManager: WebSocketManager) {
         self.robot = robot
         self.wsManager = wsManager
         
+        // Inline initialization handles sphero1, sphero2, sphero3
+        // spheroNumber is optional, defaults to nil
+        
+        if robot.bluetoothName == "SB-92B2" { self.spheroNumber = 1 }
+        else if robot.bluetoothName == "SB-F682" { self.spheroNumber = 2 }
+        else if robot.bluetoothName == "SB-42C1" { self.spheroNumber = 3 }
+        
+        // Setup listener last to avoid capturing self before full initialization
         self.listenerId = wsManager.addListener { [weak self] frame in
             self?.handleFrame(frame)
         }
         
-        // robot.onImpact = { [weak self] in
-        //     self?.sendImpactFrame()
-        // }
-
         sendNewConnection()
     }
     
@@ -154,30 +164,44 @@ class RobotWebSocketController {
             }
             
         case "02-grass-increment":
-            if robot.bluetoothName == "SB-92B2" {
-                print("⚖️ [Vibrate Sequence] SB-92B2")
-                robot.vibrate(durationS: 10)
+            if robot.bluetoothName == self.sphero1 {
+                print("⚖️ [Vibrate Sequence] - ", self.sphero1)
+                robot.vibrate(durationS: 3)
             }
 
         case "02-water-flow-toggle":
             if case .bool(let val) = frame.value, val == true {
-                if robot.bluetoothName == "SB-F682" {
-                    print("⚖️ [Balance Sequence] SB-F682: Waiting 2s before move")
+                if robot.bluetoothName == self.sphero2 {
+                    print("⚖️ [Earth Sequence] -", self.sphero2)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-                         print("➡️ [Balance Sequence] SB-F682: Moving forward")
-                         self?.robot.forward(speed: 60, durationS: 6)
+                         print("➡️ [Earth Sequence] - ", self?.sphero2, " - Moving forward")
+                         self?.robot.forward(speed: 50, durationS: 2)
+                    }
+                    
+                    // Only this robot sends the done frame to avoid duplicates
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
+                        self?.sendInteractonDoneFrame()
                     }
                 }
-                else if robot.bluetoothName == "SB-42C1" {
-                    print("⚖️ [Balance Sequence] SB-42C1: Waiting 12s before move")
+                else if robot.bluetoothName == self.sphero3 {
+                    print("⚖️ [Balance Sequence] - ", self.sphero3)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 13) { [weak self] in
-                        print("➡️ [Balance Sequence] SB-42C1: Moving forward")
-                        self?.robot.forward(speed: 60, durationS: 10)
+                        print("➡️ [Balance Sequence] -", self?.sphero3, " - Moving forward")
+                        self?.robot.forward(speed: 50, durationS: 5)
                     }
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
-                    self?.sendInteractonDoneFrame()
-                }
+            }
+        
+        case "02-sphero-02-forward":
+            if robot.bluetoothName == self.sphero2 {
+                print("⚖️ [Vibrate Sequence] - ", self.sphero2)
+                robot.forward(speed: 50, durationS: 2)
+            }
+        
+        case "02-sphero-03-forward":
+            if robot.bluetoothName == self.sphero3 {
+                print("⚖️ [Vibrate Sequence] - ", self.sphero3)
+                robot.forward(speed: 50, durationS: 5)
             }
             
         default:

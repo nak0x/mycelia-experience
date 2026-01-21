@@ -22,7 +22,7 @@ struct WebsocketSpheroView: View {
     @State private var showAddSheet: Bool = false
     
     // Known Spheros
-    let knownSpheros = ["SB-0994", "SB-92B2", "SB-6C4C", "SB-42C1", "SB-F682"]
+    let knownSpheros = ["SB-92B2", "SB-6C4C", "SB-42C1", "SB-F682"]
     
     // Grid Setup
     let columns = [
@@ -156,6 +156,15 @@ struct WebsocketSpheroView: View {
                         Text(isConnected ? "Sphero Active" : "Disconnected")
                             .font(.caption)
                             .foregroundColor(isConnected ? NeonTheme.accentPink : .gray)
+                        
+                        // Display Sphero Number if available
+                        if let num = session.controller?.spheroNumber {
+                            Text("Sphero \(num)")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(NeonTheme.accentYellow)
+                                .padding(.top, 2)
+                        }
                     }
                     
                     Spacer()
