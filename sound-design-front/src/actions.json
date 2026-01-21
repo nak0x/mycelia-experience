@@ -61,6 +61,14 @@
             "type": "boolean"
         },
         {
+            "action": "02-sphero-02-forward",
+            "type": null
+        },
+        {
+            "action": "02-sphero-03-forward",
+            "type": null
+        },
+        {
             "action": "02-interaction-done",
             "type": "boolean"
         },
@@ -69,15 +77,23 @@
             "type": null
         },
         {
+            "action": "03-shrink-mycelium",
+            "type": null
+        },
+        {
             "action": "03-nutrient-start-animation",
             "type": null
         },
         {
-            "action": "03-grow-shroom",
+            "action": "03-nutrient-animate-on",
             "type": null
         },
         {
-            "action": "03-shrink-mycelium",
+            "action": "03-nutrient-animate-off",
+            "type": null
+        },
+        {
+            "action": "03-grow-shroom",
             "type": null
         },
         {

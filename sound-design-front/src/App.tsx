@@ -31,7 +31,7 @@ function AppContent() {
 
   const [clients, setClients] = useState<Client[]>([]);
   
-  let videoPlayTime = 20000/80;
+  let videoPlayTime = 2000/80;
 
   const handleStart = () => {
     setHasInteracted(true);
@@ -67,6 +67,24 @@ function AppContent() {
                     videoRef.current.pause();
                 }
             }, videoPlayTime);
+        }
+    } else if (lastFrame.action === '03-shrink-mycelium') {
+        if (videoRef.current) {
+            // Ensure we are paused so we don't fight with native playback
+            videoRef.current.pause();
+
+            // Clear any forward playback timeout if it exists
+            if (playTimeoutRef.current) {
+                clearTimeout(playTimeoutRef.current);
+                playTimeoutRef.current = null;
+            }
+
+            // Step backward
+            const stepTime = videoPlayTime / 1000; // convert ms to seconds
+            videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - stepTime);
+            
+            // Allow growing again if we moved back
+            setIsVideoDone(false);
         }
     } else if (lastFrame.action === 'connected-clients') {
         if (Array.isArray(lastFrame.value)) {
