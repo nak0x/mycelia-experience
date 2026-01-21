@@ -1,6 +1,7 @@
 from aiohttp import web
 from app.ws_controllers.base import WsController
 from app.frames.frame import Frame
+from app.utils.timer import Timer
 import asyncio
 
 
@@ -14,7 +15,6 @@ class Controller(WsController):
         self._sphero_impact = False
         self._balance_toggle = False
         self._interaction_2_done = False
-        print(f"Reset interaction 2")
 
     async def on_sphero_impact(self, frame: Frame, ws: web.WebSocketResponse) -> None:
         if frame.value == True:
@@ -34,11 +34,12 @@ class Controller(WsController):
 
         if self._sphero_impact and self._balance_toggle:
             self._interaction_2_done = True
-            # wait 10 seconds
-            await asyncio.sleep(10)
             print("[WS] Interaction condition met! Broadcasting 02-interaction-done")
-            # Broadcast to all clients
-            await self.hub.broadcast_action("02-interaction-done", True)
+            Timer(10000, self.send_02_interaction_done, autostart=True)
+
+    def send_02_interaction_done(self):
+        asyncio.run(self.hub.broadcast_action("02-interaction-done", True))
             
     async def on_reset(self, frame: Frame, ws: web.WebSocketResponse) -> None:
+        print(f"Reset interaction 2")
         self._reset()

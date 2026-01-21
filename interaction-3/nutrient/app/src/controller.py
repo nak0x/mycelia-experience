@@ -6,7 +6,8 @@ from src.nurtient_flow import NutrientFlow
 from framework.utils.ws.interface import WebsocketInterface
 
 class MainController(Controller):
-    animation_duration = 10000  # ms
+    animation_duration = 10000
+    next_step_duration = 10000
     animated = False
 
     def setup(self):
@@ -37,6 +38,7 @@ class MainController(Controller):
 
         # Timer qui stoppera l'animation après animation_duration
         self.animation_timer = Timer(self.animation_duration, self.stop_animation)
+        self.next_step_timer = Timer(self.next_step_duration, lambda: WebsocketInterface().send_value("03-grow-shroom", None))
 
     def update(self):
         if self.animated:
@@ -63,16 +65,24 @@ class MainController(Controller):
         self.reverse_led_strip.clear()
         self.reverse_led_strip.display()
 
-        WebsocketInterface().send_value("03-grow-shroom", None)
+        self.next_step_timer.start()
 
     def on_frame_received(self, frame):
         if frame.action == "03-nutrient-animate-on":
             self.animated = True
             
-        elif frame.action == "03-nutrient-animate-off":
+        elif frame.action == "03-nutrient-animate-off" or frame.action == "03-reset":
             self.animated = False
+
             self.led_strip.clear()
+            self.led_strip.display()
+
             self.reverse_led_strip.clear()
+            self.reverse_led_strip.display()
+
+            self.animation_timer.quit()
+            self.next_step_timer.quit()
 
         elif frame.action == "03-nutrient-start-animation":
             self.start_animation()
+

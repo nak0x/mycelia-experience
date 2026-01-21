@@ -1,6 +1,7 @@
 from aiohttp import web
 from app.ws_controllers.base import WsController
 from app.frames.frame import Frame
+from app.utils.timer import Timer
 import asyncio
 
 
@@ -15,7 +16,6 @@ class Controller(WsController):
         self._wind_toggle = False
         self._rain_toggle = False
         self._interaction_1_done = False
-        print(f"Reset interaction 1")
 
     async def on_shroom_forest_lighten(self, frame: Frame, ws: web.WebSocketResponse) -> None:
         if frame.value == True:
@@ -41,11 +41,13 @@ class Controller(WsController):
 
         if self._shroom_forest_lighten and self._wind_toggle and self._rain_toggle:
             self._interaction_1_done = True
-            # wait 10 seconds
-            await asyncio.sleep(10)
-            print("[WS] Interaction condition met! Broadcasting 01-interaction-done")
-            # Broadcast to all clients
-            await self.hub.broadcast_action("01-interaction-done", True)
+            print("[WS] Interaction condition met! Broadcasting 01-interaction-done...")
+            Timer(10000, self.send_01_interaction_done, autostart=True)
+
+    def send_01_interaction_done(self):
+        asyncio.run(self.hub.broadcast_action("01-interaction-done", True))
+            
 
     async def on_reset(self, frame: Frame, ws: web.WebSocketResponse) -> None:
+        print(f"Reset interaction 1")
         self._reset()
