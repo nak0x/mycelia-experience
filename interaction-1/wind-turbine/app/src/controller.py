@@ -3,6 +3,7 @@ from framework.components.microphone import Microphone
 from framework.utils.ws.interface import WebsocketInterface
 from framework.components.led_strip import LedStrip
 from framework.app import App
+from framework.utils.timer import Timer
 import time
 
 
@@ -329,5 +330,8 @@ class WindTurbineController(Controller):
         self.completed = True
         self.progress = 0.0
         self.level = 0
+        Timer(2000, self._light_off, autostart=True)
+
+    def _light_off(self):
         self.strip.clear()
         self.strip.display()
