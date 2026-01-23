@@ -147,9 +147,9 @@ class RobotWebSocketController {
         case "01-interaction-done":
             if wsManager.deviceId == "IOS-020101" {
                 print("⏳ Début du délai de 10s avant activation...")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
                     print("🚀 Activation du Rover après délai (Scenario Interaction 2)")
-                    self?.robot.forward(speed: 90, durationS: 8)
+                    self?.robot.forward(speed: 90, durationS: 7)
                 }
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
@@ -158,7 +158,7 @@ class RobotWebSocketController {
         case "02-rover-toggle":
             if wsManager.deviceId == "IOS-020101" {
                 print("🚀 Activation immédiate du Rover (Scenario Interaction 2)")
-                robot.forward(speed: 90, durationS: 8)
+                robot.forward(speed: 90, durationS: 7)
             } else {
                 print("⚠️ Commande ignorée pour cet ID: \(wsManager.deviceId)")
             }
@@ -175,7 +175,7 @@ class RobotWebSocketController {
                     print("⚖️ [Earth Sequence] -", self.sphero2)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
                          print("➡️ [Earth Sequence] - ", self?.sphero2, " - Moving forward")
-                         self?.robot.forward(speed: 50, durationS: 2)
+                         self?.robot.forward(speed: 50, durationS: 3)
                     }
                     
                     // Only this robot sends the done frame to avoid duplicates
@@ -187,7 +187,7 @@ class RobotWebSocketController {
                     print("⚖️ [Balance Sequence] - ", self.sphero3)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 13) { [weak self] in
                         print("➡️ [Balance Sequence] -", self?.sphero3, " - Moving forward")
-                        self?.robot.forward(speed: 50, durationS: 5)
+                        self?.robot.forward(speed: 60, durationS: 6)
                     }
                 }
             }
@@ -195,13 +195,13 @@ class RobotWebSocketController {
         case "02-sphero-02-forward":
             if robot.bluetoothName == self.sphero2 {
                 print("⚖️ [Vibrate Sequence] - ", self.sphero2)
-                robot.forward(speed: 50, durationS: 2)
+                robot.forward(speed: 60, durationS: 2)
             }
         
         case "02-sphero-03-forward":
             if robot.bluetoothName == self.sphero3 {
                 print("⚖️ [Vibrate Sequence] - ", self.sphero3)
-                robot.forward(speed: 50, durationS: 5)
+                robot.forward(speed: 60, durationS: 6)
             }
             
         default:

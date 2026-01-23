@@ -27,11 +27,12 @@ function AppContent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playTimeoutRef = useRef<number | null>(null);
   const lastProcessedFrameRef = useRef<Frame | null>(null);
+  const growCountRef = useRef(0);
   const { sendAction } = useSendAction();
 
   const [clients, setClients] = useState<Client[]>([]);
   
-  let videoPlayTime = 2000/80;
+  let videoPlayTime = 2000/60;
 
   const handleStart = () => {
     setHasInteracted(true);
@@ -47,9 +48,15 @@ function AppContent() {
 
     if (lastFrame.action === '03-grow-mycelium') {
         if (videoRef.current) {
-            if (isVideoDone) {
-                return;
+            if (isVideoDone) return;
+            
+            growCountRef.current += 1;
+            
+            if (growCountRef.current === 8) {
+                const stepTime = videoPlayTime / 1000;
+                videoRef.current.currentTime += stepTime * 12;
             }
+
             if (videoRef.current.ended) {
                 setIsVideoDone(true);
                 sendAction('03-nutrient-start-animation');
@@ -67,6 +74,17 @@ function AppContent() {
                     videoRef.current.pause();
                 }
             }, videoPlayTime);
+        }
+    } else if (lastFrame.action === '03-reset') {
+        if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+        }
+        growCountRef.current = 0;
+        setIsVideoDone(false);
+        if (playTimeoutRef.current) {
+            clearTimeout(playTimeoutRef.current);
+            playTimeoutRef.current = null;
         }
     } else if (lastFrame.action === '03-shrink-mycelium') {
         if (videoRef.current) {
@@ -147,7 +165,7 @@ function AppContent() {
                 setIsClientsOpen={setIsClientsOpen}
             />
 
-            <main className="flex-1 flex items-center justify-center p-4">
+            <main className="flex-1 flex items-start justify-center p-4 pt-20">
                 <LatestFrame lastFrame={lastFrame} />
             </main>
 
