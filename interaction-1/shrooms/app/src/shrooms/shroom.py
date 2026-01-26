@@ -1,74 +1,115 @@
-from framework.components.light_resistor import LightResistor
 import time
+from framework.components.mcp3008 import Chanel
+from framework.components.led_strip import LedStrip
+from src.shrooms.animations.animation import Animation
+from src.shrooms.animations.dead_animation import DeadAnimation
+from src.shrooms.animations.lighting_animation import LightingAnimation
+from .light_drop_detector import LightDropDetector
 
 class Shroom:
-    def __init__(self, name, pin, threshold_drop=700, delta_ms=350, cooldown_ms=1000, buf_size=32):
-        self.button = LightResistor(pin, callback=self.handle_light_level, name="[%d] %s" % (pin, name))
+    def __init__(self, name, chanel, leds: LedStrip, threshold_drop=50, delta_ms=150,
+                 cooldown_ms=1000, buf_size=32, start=0, span=3):
+        
+        self.chanel = Chanel(chanel, name, self.handle_light_level) if chanel is not None else None
         self.name = name
+        self.leds = leds
+
+        self.led_config = {
+            "span": span,
+            "start_pixel": start,
+            "end_pixel": start + span - 1
+        }
 
         self.threshold_drop = int(threshold_drop)   # required drop amount
         self.delta_ms = int(delta_ms)               # time window in ms
         self.cooldown_ms = int(cooldown_ms)
-        self.lighten = False
 
-        # ring buffer: times + levels
-        self._ts = [0] * buf_size
-        self._lv = [0] * buf_size
-        self._n = 0            # number of valid samples (<= buf_size)
-        self._head = 0         # next write index
-
+        # Track max level in the current window
+        self._max_level = 0
+        self._max_level_time = time.ticks_ms()
         self._last_trigger = time.ticks_ms()
+        
+        # Setup default animation
+        self.animation = None
+        self.update_animation(DeadAnimation(self))
 
-    def handle_light_level(self, level):
-        # print(f"{self.name}: {level}")
-        now = time.ticks_ms()
-        level = int(level)
+        self.detector = LightDropDetector(
+            drop_trigger=self.threshold_drop,
+            cooldown_ms=self.cooldown_ms,
+            ema_alpha=0.35,
+            baseline_alpha=0.02,
+            min_drop_rate=0.0,  # mets 0.15 si tu veux éviter les dérives lentes
+        )
 
-        # cooldown
-        if time.ticks_diff(now, self._last_trigger) < self.cooldown_ms:
-            # still store samples or not? typically no, keeps logic clean
-            return
+    def update_animation(self, animation: Animation):
+        print(f"{self.name}: Updating animation")
+        self.animation.on_exit() if self.animation is not None else None
+        self.animation = animation
+        self.animation.on_enter()
 
-        # push into ring buffer
-        self._ts[self._head] = now
-        self._lv[self._head] = level
-        self._head = (self._head + 1) % len(self._ts)
-        if self._n < len(self._ts):
-            self._n += 1
+    def display_pixel(self, i, color):
+        self.leds.set_pixel(i + self.led_config['start_pixel'], color, show=False)
 
-        if self._n < 2:
-            return
+    def display_color(self, color):
+        for i in range(self.led_config['start_pixel'], self.led_config['end_pixel'] + 1):
+            self.leds.set_pixel(i, color, show=False)
+        self.leds.display()
 
-        # Find the maximum level within the last delta_ms window.
-        # We walk backwards from newest sample until we exit the window or exhaust samples.
-        max_lv = level
-        i = (self._head - 1) % len(self._ts)  # newest index
-        checked = 0
+    @property
+    def lighten(self):
+        return isinstance(self.animation, LightingAnimation)
+    
+    def reset(self):
+        # 1) Reset detector avec la valeur courante (si dispo)
+        self.detector.reset()
 
-        while checked < self._n:
-            t = self._ts[i]
-            lv = self._lv[i]
+        # 2) Forcer DeadAnimation (ne dépend pas de l’anim courante)
+        self.animation.to_dead()
 
-            if time.ticks_diff(now, t) > self.delta_ms:
-                break
+        # 3) petite fenêtre où on ignore les triggers (stabilisation)
+        self._ignore_light_until = time.ticks_add(time.ticks_ms(), 120)
 
-            if lv > max_lv:
-                max_lv = lv
+        # 4) LEDs off
+        print(f"{self.name}: Reset")
 
-            i = (i - 1) % len(self._ts)
-            checked += 1
+    def setup_leds(self, start_pixel, end_pixel):
+        self.led_config["start_pixel"] = start_pixel
+        self.led_config["end_pixel"] = end_pixel
 
-        drop = max_lv - level
-        if drop >= self.threshold_drop:
-            self._last_trigger = now
-            self.on_light_detected()
-
-            # reset buffer to avoid retriggering on the same falling edge
-            self._n = 0
-            self._head = 0
+    def test_leds(self):
+        self.display_color((255, 0, 0))
 
     def on_light_detected(self):
         if self.lighten:
             return
-        self.lighten = True
-        print("%s: Lighten" % self.name)
+        
+        # Play glow animation
+        self.animation.to_lighting()
+        print(f"{self.name}: Light detected, starting glow")
+
+    def to_lighting(self):
+        self.animation.to_lighting()
+
+    def to_living(self):
+        self.animation.to_living()
+
+    def handle_light_level(self, level, *args):
+        if self.chanel is None:
+            return
+
+        # Ignore juste après reset
+        if hasattr(self, "_ignore_light_until"):
+            if time.ticks_diff(time.ticks_ms(), self._ignore_light_until) < 0:
+                # Important: on fait quand même tourner le detector pour qu'il se calibre
+                self.detector.update(level)
+                return
+
+        # Important: même en Lighting, on nourrit le detector (sinon il "gèle")
+        triggered = self.detector.update(level)
+
+        # Mais on ne déclenche jamais pendant Lighting
+        if self.lighten:
+            return
+
+        if triggered:
+            self.on_light_detected()
