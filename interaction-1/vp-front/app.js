@@ -284,6 +284,9 @@ class VideoPlayer {
                     if (sequenceEntry.playCount === -1) {
                         console.log(`[Auto-Loop] Looping chapter "${currentChapter.title}" (infinite loop)`);
                         this.video.currentTime = currentChapter.startTime;
+                        if (this.video.paused) {
+                            this.video.play().catch(err => console.error('Error playing video after loop:', err));
+                        }
                     }
                     // If playCount is 1, play once without looping - advance immediately
                     else if (sequenceEntry.playCount === 1) {
@@ -293,6 +296,9 @@ class VideoPlayer {
                         } else {
                             console.log(`[Loop] Looping chapter "${currentChapter.title}" (no next chapter)`);
                             this.video.currentTime = currentChapter.startTime;
+                            if (this.video.paused) {
+                                this.video.play().catch(err => console.error('Error playing video after loop:', err));
+                            }
                         }
                     }
                     // If playCount > 1, loop until we've looped enough times
@@ -300,6 +306,9 @@ class VideoPlayer {
                         this.chapterPlayCount[currentSlug]++;
                         console.log(`[Auto-Loop] Looping chapter "${currentChapter.title}" (${this.chapterPlayCount[currentSlug]}/${sequenceEntry.playCount - 1} loops)`);
                         this.video.currentTime = currentChapter.startTime;
+                        if (this.video.paused) {
+                            this.video.play().catch(err => console.error('Error playing video after loop:', err));
+                        }
                     }
                     else if (nextChapter) {
                         console.log(`[Auto-Advance] Chapter "${currentChapter.title}" finished. Auto-advancing to next chapter...`);
@@ -307,15 +316,27 @@ class VideoPlayer {
                     } else {
                         console.log(`[Loop] Looping chapter "${currentChapter.title}" (no next chapter)`);
                         this.video.currentTime = currentChapter.startTime;
+                        if (this.video.paused) {
+                            this.video.play().catch(err => console.error('Error playing video after loop:', err));
+                        }
                     }
                 } else {
-                    // Chapter not in sequence, just loop
-                    console.log(`[Loop] Looping chapter "${currentChapter.title}" (not in sequence)`);
+                    // Chapter not in sequence, just loop (always)
+                    console.log(`[Loop] Looping chapter "${currentChapter.title}" (not in autoPlaySequence) - Current time: ${this.video.currentTime.toFixed(2)}s`);
                     this.video.currentTime = currentChapter.startTime;
+                    // Ensure video is playing after seeking
+                    if (this.video.paused) {
+                        this.video.play().catch(err => console.error('Error playing video after loop:', err));
+                    }
                 }
             } else {
                 // Default behavior: loop current chapter
+                console.log(`[Loop] Looping chapter "${currentChapter.title}" (no autoPlaySequence)`);
                 this.video.currentTime = currentChapter.startTime;
+                // Ensure video is playing after seeking
+                if (this.video.paused) {
+                    this.video.play().catch(err => console.error('Error playing video after loop:', err));
+                }
             }
         }
     }

@@ -70,7 +70,6 @@ class Shroom:
         self._ignore_light_until = time.ticks_add(time.ticks_ms(), 120)
 
         # 4) LEDs off
-        self.display_color((0, 0, 0))
         print(f"{self.name}: Reset")
 
     def setup_leds(self, start_pixel, end_pixel):
