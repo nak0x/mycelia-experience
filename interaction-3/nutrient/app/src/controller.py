@@ -6,8 +6,8 @@ from src.nurtient_flow import NutrientFlow
 from framework.utils.ws.interface import WebsocketInterface
 
 class MainController(Controller):
-    animation_duration = 10000
-    next_step_duration = 10000
+    animation_duration = 20000
+    next_step_duration = 5000
     animated = False
 
     def setup(self):
@@ -19,7 +19,7 @@ class MainController(Controller):
 
         self.flow = NutrientFlow(
             num_pixels=len(self.pixels),
-            color=(0, 255, 0),
+            color=(255, 234, 100),
             wave_len=20,
             gap_len=15,
             speed=50.0,
@@ -28,7 +28,7 @@ class MainController(Controller):
 
         self.reverse_flow = NutrientFlow(
             num_pixels=len(self.reverse_pixels),
-            color=(0, 0, 255),
+            color=(15, 128, 54),
             wave_len=20,
             gap_len=15,
             speed=50.0,
